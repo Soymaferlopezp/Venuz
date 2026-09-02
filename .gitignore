@@ -35,4 +35,5 @@ supabase/.temp/
 
 # Local artifacts
 artifacts/
+dist/
 tmp/

@@ -11,7 +11,7 @@ Build, test, document, and deploy **Venuz**, a web application that screens high
 - Monorepo with `apps/web`, `apps/api`, `supabase`, `docs`, and `.github`.
 - Web: Next.js App Router, TypeScript, Tailwind, shadcn/ui, Recharts, Node.js 22+, Vercel.
 - API: Python 3.12+, FastAPI, Pydantic v2, typed domain modules, Render Free web service.
-- Data/Auth: Supabase Postgres/Auth, versioned migrations, explicit grants, RLS.
+- Data/Auth: hosted Supabase Postgres/Auth, versioned migrations, explicit grants, RLS. No local Supabase runtime on developer machines.
 - Alpaca: `alpaca-py` for application runtime; Paper Trading API only; Market Data, calendar, assets, account, positions, orders and News API.
 - Alpaca MCP: configure and prove the official Paper Trading MCP connection with sanitized smoke-test evidence.
 - Alpaca CLI: configure paper profile and provide sanitized account/order/asset smoke-test commands and results.
@@ -55,6 +55,8 @@ Implement `docs/TRADING_STRATEGY.md` exactly. Key invariants include:
 - Redact secrets and sensitive broker metadata in logs/audit/UI.
 - Use current Supabase publishable/secret keys, explicit grants, RLS, safe authorization, and database advisors.
 - Add idempotency and an immutable audit trail.
+- Use the hosted-first database workflow: `supabase link`, `migration list`, `db push --dry-run`, approved `db push`, then `db lint --linked --level error`. Never run `db reset --linked` or automate `migration repair`/`db pull`.
+- Run pgTAP only in GitHub Actions against an ephemeral Supabase stack. `supabase start` and `db reset --local` are CI-only; developers do not install Docker, Podman, or WSL for Venuz.
 
 ## Product requirements
 

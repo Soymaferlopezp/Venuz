@@ -17,10 +17,12 @@ Exit gate: both apps run locally, CI is green, no secret is committed, and a bad
 ### Phase 1: database and auth
 
 - Create initial Supabase migrations, explicit grants, RLS, indexes, and seed/demo operator.
+- Use hosted Supabase for development, integration, and demonstration; link and inspect the remote project without running a local stack on developer machines.
+- Validate all migrations and the three pgTAP suites from scratch on an ephemeral Supabase stack in GitHub Actions.
 - Implement authenticated web/API boundary.
 - Persist job, screening, approval, order, evidence, provider-budget, and audit state.
 
-Exit gate: RLS tests prove anonymous and cross-user access is denied; operator paths work.
+Exit gate: CI pgTAP proves anonymous and cross-user access is denied on an ephemeral database; `migration list` and `db push --dry-run` are reviewed before any manual hosted push; operator paths work.
 
 ### Phase 2: data ingestion and domain engine
 
@@ -71,6 +73,7 @@ Exit gate: Playwright covers scan → thesis → approval/order preview → port
 
 - Deploy web to Vercel, API to Render Free, database/auth to Supabase.
 - Configure secrets only in platform settings.
+- Deploy hosted Supabase migrations only through the manual, protected workflow after reviewing its dry-run. Never use `db reset --linked`, automated `migration repair`, or automated `db pull`.
 - Configure Render `/health`, CORS, Vercel API URL, and Supabase redirect URLs.
 - Validate cold-start behavior.
 

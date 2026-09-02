@@ -31,7 +31,7 @@ If documents conflict, security and paper-trading restrictions win. Never silent
 
 - Web: Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, Recharts, Node.js 22+, deployed on Vercel.
 - API/agent: Python 3.12+, FastAPI, Pydantic v2, SQLAlchemy 2.x/Alembic or Supabase REST where appropriate, deployed as a Render Free web service.
-- Database/Auth: Supabase Postgres and Supabase Auth with explicit grants and RLS.
+- Database/Auth: hosted Supabase Postgres and Supabase Auth with explicit grants and RLS. No local Supabase runtime is used on developer machines.
 - Trading/data: `alpaca-py`, Alpaca Paper Trading API, Alpaca Market Data and News API.
 - Required Alpaca tooling: official Trading MCP integration and Alpaca CLI smoke tests, documented separately from the runtime API path.
 - Fundamentals: SEC EDGAR Company Facts/Submissions; Alpha Vantage only for analyst estimates and revisions, aggressively cached.
@@ -55,6 +55,15 @@ If documents conflict, security and paper-trading restrictions win. Never silent
 - `supabase/migrations`: versioned schema, grants, RLS, indexes, and database tests.
 - `docs`: decisions and operating instructions.
 - `.github`: agent instructions, prompts, templates, and CI.
+
+## Supabase hosted-first workflow
+
+- Hosted Supabase is the database runtime for development, integration, and demonstration.
+- Keep every schema change versioned in `supabase/migrations`.
+- Link the intended remote project with `supabase link`, inspect it with `supabase migration list`, preview with `supabase db push --dry-run`, apply only after explicit review with `supabase db push`, and validate with `supabase db lint --linked --level error`.
+- `supabase db reset --linked` is prohibited. Do not automate `migration repair` or `db pull`.
+- Developer machines do not install or use Docker, Podman, or WSL for this repository. `supabase start` and `supabase db reset --local` are CI-only commands.
+- pgTAP runs only against the ephemeral Supabase stack created inside GitHub Actions; CI must never point pgTAP at the shared hosted project.
 
 ## Safety behavior
 

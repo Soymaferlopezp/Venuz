@@ -1,0 +1,54 @@
+name: Supabase hosted migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_migrations:
+        description: Apply after reviewing a previous preview-only run
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-development-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Review and apply hosted migrations
+    runs-on: ubuntu-latest
+    environment: supabase-development
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+      - name: Validate required secret presence
+        shell: bash
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_DB_PASSWORD"
+          test -n "$SUPABASE_PROJECT_ID"
+      - name: Link hosted development project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+      - name: List migrations before push
+        run: supabase migration list
+      - name: Preview hosted migration push
+        run: supabase db push --dry-run
+      - name: Apply hosted migration push
+        if: ${{ inputs.apply_migrations }}
+        run: supabase db push
+      - name: List migrations after push
+        if: ${{ inputs.apply_migrations }}
+        run: supabase migration list
+      - name: Lint linked hosted schema
+        if: ${{ inputs.apply_migrations }}
+        run: supabase db lint --linked --level error --fail-on error

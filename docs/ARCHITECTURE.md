@@ -27,7 +27,7 @@ Developer/operator verification
 
 - Next.js focuses on a polished, accessible judge/operator interface and deploys naturally to Vercel.
 - FastAPI hosts Python financial/data libraries, Alpaca integration, deterministic calculations, orchestration, and OpenAPI contracts.
-- Supabase persists cross-service state, approvals, audit events, cache metadata, and auth.
+- Hosted Supabase persists cross-service state, approvals, audit events, cache metadata, and auth for development, integration, and demonstration.
 
 ## Suggested repository layout
 
@@ -135,3 +135,8 @@ Render Free sleeps after inactivity and does not provide a free background worke
 - Use publishable and secret keys, not new legacy-key setup.
 - Explicit grants plus RLS.
 - Version schema in `supabase/migrations` and test policies.
+- Developer workstations never host a Supabase instance and do not require Docker, Podman, or WSL.
+- Link the hosted development project with `supabase link`; inspect `migration list`, preview `db push --dry-run`, apply `db push` only after review, then run `db lint --linked --level error`.
+- `db reset --linked` is forbidden. `supabase start` and `db reset --local` are reserved exclusively for the ephemeral GitHub Actions runner.
+- pgTAP executes only in validation CI against that ephemeral runner database, never against the shared hosted project.
+- Hosted migration deployment is a separate manual workflow protected by the `supabase-development` GitHub environment, concurrency control, timeout, and repository secrets.

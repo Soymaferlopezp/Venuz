@@ -16,6 +16,8 @@ Do not send credentials in chat. The fact that this is a hackathon or paper acco
 | Alpha Vantage key | API `.env` | no | secret env | forbidden |
 | SEC User-Agent contact | API `.env` | no | env | not needed |
 
+GitHub Actions stores `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, and `SUPABASE_PROJECT_ID` only as encrypted repository/environment secrets for the manual hosted-migration workflow. Their values must never appear in YAML, documentation, command arguments, or logs.
+
 ## Required controls
 
 - `.env*` ignored except `.env.example`.
@@ -36,6 +38,10 @@ Do not send credentials in chat. The fact that this is a hackathon or paper acco
 - `TO authenticated` alone is not authorization; policies need ownership or operator-role predicates.
 - Do not use user-editable metadata for authorization.
 - Views exposed through the API use `security_invoker`.
+- Hosted Supabase is the only database runtime for development, integration, and demonstration. Developer machines do not install or run Docker, Podman, WSL, or a local Supabase stack.
+- Version migrations under `supabase/migrations`; use `supabase link`, `migration list`, `db push --dry-run`, approved `db push`, and `db lint --linked --level error` in that order.
+- `db reset --linked` is prohibited. Do not automate `migration repair` or `db pull`.
+- pgTAP runs only in validation CI against an ephemeral runner database that has no hosted-project credentials and is always stopped afterward.
 
 ## LLM privacy and safety
 

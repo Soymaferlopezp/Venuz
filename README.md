@@ -1,319 +1,180 @@
 # Venuz
 
-> Evidence-first fundamental analysis and risk-controlled execution for **Alpaca Paper Trading**.
+> Análisis fundamental trazable y controles deterministas para **Alpaca Paper Trading**.
 
-This repository is the foundation for a hackathon MVP that discovers high-quality US equities, evaluates them with transparent deterministic rules, explains the evidence with AI, and manages simulated positions through Alpaca.
+Venuz es una aplicación web para evaluar acciones estadounidenses de calidad, explicar cada conclusión con evidencia y, en fases posteriores, gestionar exclusivamente órdenes simuladas. El modelo de IA nunca decide elegibilidad, riesgo ni ejecución.
 
-**Important:** this project is paper trading only. It does not use or require real funds, and it is not financial advice or a production-ready autonomous trading system.
+> **PAPER TRADING — NO REAL MONEY.** No es asesoría financiera ni un sistema de producción.
 
-## Why this project is different
+## Estado implementado
 
-Many “trading agents” ask a language model what to buy and hand it broker tools. This project separates responsibilities:
+La fase de fundación incluye:
 
-- Deterministic Python code calculates financial metrics, valuation, eligibility, allocation, risk, stops, and order transitions.
-- Alpaca provides paper execution, account/position state, market data, news, MCP tools, and CLI operations.
-- SEC filings ground company financial statements.
-- Alpha Vantage contributes analyst estimates and revisions under a strict free-tier budget.
-- Gemini explains structured evidence; OpenRouter is a fixed-model fallback.
-- Supabase stores state, approvals, evidence, provider budgets, and an immutable audit trail.
-- A human approval queue handles uncertainty without blocking unrelated analysis or trades.
+- `apps/web`: experiencia inicial en Next.js 16 con estado de `GET /health`, cold start de Render y fallo seguro.
+- `apps/api`: FastAPI + Pydantic v2 con configuración tipada y bloqueo estricto de cualquier modo o endpoint que no sea Alpaca Paper.
+- `supabase`: migración versionada, grants explícitos, RLS por propietario, idempotencia e historial de auditoría append-only.
+- `.github/workflows/ci.yml`: formato, lint, tipos, pruebas, builds, pgTAP efímero y detección de secretos.
+- `.github/workflows/supabase-hosted-migrations.yml`: despliegue manual y protegido de migraciones al proyecto alojado.
 
-The language model explains decisions; it does not become the trading policy.
+No hay llamadas a proveedores, lógica financiera, órdenes ni despliegues en esta fase.
 
-## MVP scope
-
-Included:
-
-- US equities.
-- Fundamental screening and a 10–15 company watchlist.
-- Self-relative P/E and P/FCF valuation.
-- Alpaca Paper market orders and protective order lifecycle.
-- Portfolio, sector, cash, earnings-window, and data-quality safeguards.
-- Evidence timeline, nonblocking approvals, and audit history.
-- Responsive judge/operator web application.
-
-
-## Approved stack
-
-| Layer | Technology | Deployment |
-|---|---|---|
-| Web | Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, Recharts | Vercel Hobby |
-| API/domain engine | Python 3.12+, FastAPI, Pydantic v2 | Render Free web service |
-| Database/Auth | Supabase Postgres + Supabase Auth, RLS | Supabase Free |
-| Trading/runtime | `alpaca-py`, Alpaca Paper Trading API | FastAPI service |
-| Agent tooling | Official Alpaca Trading MCP | Paper connection |
-| Operations | Alpaca CLI | Developer/operator machine |
-| Statements | SEC EDGAR Company Facts/Submissions | Cached by API |
-| Estimates | Alpha Vantage | 25-request/day hard budget |
-| AI primary | Gemini Free Tier | Server-side only |
-| AI fallback | Fixed OpenRouter free model | Server-side only |
-| Tests | pytest, Vitest/RTL, Playwright, SQL/RLS tests | Local + GitHub Actions |
-
-Node.js 22+ is required because current Supabase client libraries no longer support Node.js 20.
-
-## Architecture
+## Arquitectura
 
 ```text
-User / Judge
-    |
-    v
-Next.js on Vercel
-    |
-    v
-FastAPI on Render Free
-    |-- Supabase Postgres/Auth
-    |-- Alpaca Paper Trading + Market Data + News
-    |-- SEC EDGAR
-    |-- Alpha Vantage estimates
-    |-- Gemini
-    `-- OpenRouter fallback
-
-Codex/operator
-    |-- Official Alpaca Trading MCP (Paper)
-    `-- Alpaca CLI (Paper smoke tests)
+Browser
+  -> Next.js (presentación; solo variables NEXT_PUBLIC_*)
+      -> FastAPI (configuración privada y futuros controles deterministas)
+          -> Supabase Postgres/Auth (RLS, estado y auditoría)
+          -> Alpaca Paper / SEC / Alpha Vantage / IA (fases posteriores)
 ```
 
-See [Architecture](docs/ARCHITECTURE.md) for boundaries, provider ownership, schema outline, and deployment constraints.
+Responsabilidades:
 
-## Strategy summary
+- La web no contiene secretos ni calcula reglas financieras.
+- El API valida su configuración al importar el entrypoint y no arranca fuera de Paper.
+- Supabase niega acceso anónimo. Los catálogos son de lectura autenticada y los datos operativos se filtran por `auth.uid()`.
+- Las escrituras operativas quedan reservadas al backend con la clave secreta de Supabase.
 
-The complete source of truth is [Trading Strategy](docs/TRADING_STRATEGY.md).
+Consulta [Arquitectura](docs/ARCHITECTURE.md), [Estrategia](docs/TRADING_STRATEGY.md), [Producto](docs/PRODUCT_SPEC.md) y [Seguridad](docs/SECURITY_AND_SECRETS.md).
 
-### Universe
+## Requisitos
 
-- Top 10–20 eligible companies by market capitalization in prioritized sectors.
-- At least USD 10B market capitalization.
-- At least USD 20M average daily dollar volume.
-- Positive latest net income.
-- Alpaca-tradable US equity.
-- Excludes banks, insurers, REITs, penny stocks, crypto, and unprofitable companies.
+- Windows Command Prompt (`cmd.exe`).
+- Node.js 22 o superior.
+- Python 3.12.x.
+- Supabase CLI 2.116.0 mediante `npx` para gestionar el proyecto alojado.
+- Git.
 
-### Seven criteria
+La fundación fue creada con Python 3.12.10, Node 24.20.0, npm 11.19.0 y Supabase CLI 2.116.0.
 
-1. Four-year revenue trend.
-2. Net-income and net-margin quality.
-3. Free cash flow, positive in at least 3 of 4 years and latest year.
-4. Positive/growing shareholders’ equity (`assets - liabilities`).
-5. Debt/Equity below 1.
-6. Positive comparable EPS expectations and upward estimate revisions.
-7. Self-relative P/E and P/FCF valuation.
+## Variables de entorno
 
-Every criterion must be green or yellow. Any red blocks entry.
+La plantilla raíz [`.env.example`](.env.example) enumera nombres y valores seguros. Nunca copies esa plantilla completa al frontend porque contiene nombres de variables privadas.
 
-### Valuation
+- `apps/api/.env`: configuración privada del servidor. Debe permanecer ignorada.
+- `apps/web/.env.local`: solo `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Debe permanecer ignorada.
+- `apps/web/.env.example`: plantilla pública opcional para el frontend.
 
-For each ratio, use a coherent cluster from up to eight completed prior quarters and its median:
-
-```text
-estimated price = current price × historical ratio / current ratio
-```
-
-P/E and P/FCF targets remain separate and form a range. They are recalculated after two complete sessions following earnings and frozen until the next report.
-
-- Strong green: at least 10% below the range floor.
-- Green: 5–10% below the range floor.
-- Yellow: inside the range or low confidence.
-- Red: above the range ceiling.
-
-Only green valuation can authorize an automatic paper entry.
-
-### Portfolio and risk
-
-- Maximum 10% per position.
-- Minimum 20% cash.
-- Maximum 20% per sector and two companies per sector.
-- No entry during the five sessions before earnings.
-- Market entry only during regular US hours after deterministic preflight.
-- Initial stop 10% below actual fill.
-- Benefit:risk = 2:1; initial objective is +2R (approximately +20%).
-- At +2R, retain the full position and activate a 5% trailing stop.
-- If fair value arrives first, protect 5% below it; at 5% above fair value, protect fair value and trail 5%.
-
-## Product screens
-
-- Judge overview.
-- Authentication.
-- Portfolio dashboard.
-- Screener/watchlist.
-- Company thesis and evidence.
-- Paper order preview.
-- Independent approval queue.
-- Positions and exit-state monitoring.
-- Orders and audit timeline.
-- Integration health/settings with redacted credential status.
-
-See [Product Specification](docs/PRODUCT_SPEC.md) and the [UI generator prompt](docs/UI_GENERATOR_PROMPT.md).
-
-## Repository status
-
-The project is currently in the **specification and operational-foundation phase**. Application scaffolding and implementation follow the phase prompts in `.github/prompts/`.
-
-Planned layout:
-
-```text
-apps/
-  web/                 # Next.js application
-  api/                 # FastAPI and deterministic domain engine
-supabase/
-  migrations/          # Versioned schema, grants, RLS, indexes
-  tests/               # Database/RLS tests
-docs/                  # Product and engineering source of truth
-.github/
-  instructions/        # Scoped agent rules
-  prompts/             # Master and phase build prompts
-```
-
-The inherited SaludPlus/Laravel material was removed before the initial commit. See the [GitHub folder audit](docs/GITHUB_AUDIT.md) for the cleanup record and the current center of operations.
-
-## Prerequisites
-
-- Git and a GitHub account.
-- Node.js 22+ and a package manager selected by the scaffold phase.
-- Python 3.12+.
-- Supabase CLI (version discovered and pinned during implementation).
-- Alpaca CLI.
-- Accounts/keys:
-  - Alpaca Paper Trading.
-  - Supabase.
-  - Gemini API Free Tier.
-  - OpenRouter.
-  - Alpha Vantage.
-  - Vercel.
-  - Render.
-
-Do not activate an Alpaca Live account for this MVP.
-
-## Environment setup
-
-1. Copy `.env.example` into the environment files selected by each app during scaffolding.
-2. Fill values locally; never commit them.
-3. Keep browser-exposed values limited to:
-
-   - `NEXT_PUBLIC_SUPABASE_URL`.
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-   - Public app/API URLs.
-
-4. Keep Alpaca, Gemini, OpenRouter, Alpha Vantage, Supabase secret, and database credentials server-side.
-5. Ensure:
+El API solo acepta:
 
 ```text
 TRADING_MODE=paper
 ALPACA_PAPER=true
 ALPACA_TRADING_BASE_URL=https://paper-api.alpaca.markets
+AUTO_EXECUTION_ENABLED=false
 ```
 
-The API must refuse startup for a Live host or non-paper mode.
+Los secretos se representan como `**********` y `/health` nunca devuelve estado de credenciales, cuentas ni proveedores.
 
-Read [Security and Secrets](docs/SECURITY_AND_SECRETS.md) before configuring keys. Do not paste credentials into an AI chat, screenshot, issue, commit, or README.
+## Desarrollo local en Windows Command Prompt
 
-## Local development
+Desde la raíz del repositorio:
 
-Exact commands will be added after the scaffold phase selects and pins the workspace tooling. The required end state is:
+### API
 
-```text
-web: http://localhost:3000
-api: http://localhost:8000
-api health: http://localhost:8000/health
+```bat
+cd apps\api
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install --upgrade pip
+.venv\Scripts\python.exe -m pip install -e .[dev]
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-README commands must be verified on Windows PowerShell because that is the primary development environment, while remaining portable to CI/Linux.
+Abre `http://localhost:8000/health`. El proceso se detiene antes de servir tráfico si la configuración no es Paper.
 
-## Alpaca integrations
+### Web
 
-### Runtime API
+En otra ventana de Command Prompt:
 
-The application uses `alpaca-py` with Paper credentials for account, assets, calendar, market data, news, positions, and order management.
+```bat
+cd apps\web
+npm ci
+npm run dev
+```
 
-### Trading MCP
+Abre `http://localhost:3000`.
 
-The official Alpaca Trading MCP Paper connection is required for the hackathon demonstration and agent/operator workflows. Its setup and sanitized verification will be documented during the paper-execution phase.
+### Supabase alojado
 
-### CLI
+La base de datos de desarrollo, integración y demostración es el proyecto alojado. No se instala ni ejecuta Supabase localmente. Vincula el proyecto remoto y revisa cada migración desde Command Prompt:
 
-The Alpaca CLI is used for reproducible Paper account, asset, and order smoke tests. Never show the secret in terminal recordings or committed output.
+```bat
+npx --yes supabase@2.116.0 login
+npx --yes supabase@2.116.0 link --project-ref PROJECT_REF
+npx --yes supabase@2.116.0 migration list
+npx --yes supabase@2.116.0 db push --dry-run
+```
 
-These are complementary surfaces: the Trading API is the application runtime; MCP and CLI demonstrate agent connectivity and operational control.
+Solo después de revisar el dry-run y recibir aprobación explícita:
 
-## Data-provider budget
+```bat
+npx --yes supabase@2.116.0 db push
+npx --yes supabase@2.116.0 migration list
+npx --yes supabase@2.116.0 db lint --linked --level error
+```
 
-Alpha Vantage is limited to 25 free calls per day. The application must:
+`supabase db reset --linked` está terminantemente prohibido. `supabase start` y `supabase db reset --local` no forman parte del flujo de la máquina personal. Tampoco se automatizan `migration repair` ni `db pull`.
 
-- Use it only for estimates and revisions.
-- Persist a daily counter.
-- Cache by symbol/period/provider timestamp.
-- Prefer SEC for statements and Alpaca for prices/news.
-- Stop before exceeding the budget.
-- Never retry quota errors in a tight loop.
+Las tres suites pgTAP se ejecutan únicamente en GitHub Actions contra una instancia efímera creada dentro del runner. Ese job no recibe credenciales del proyecto alojado y siempre detiene el stack.
 
-OpenRouter free requests are also scarce. Gemini is primary; OpenRouter is fallback-only, with a fixed model rather than the random free router.
+No se incluye un usuario o contraseña demo en Git. Crea el operador mediante Supabase Auth y deja que el backend aprovisione `profiles` y `app_roles` en una fase autenticada.
 
-## Testing and verification
+## Verificación
 
-The final implementation must provide:
+### Backend
 
-- Unit tests for every financial formula and boundary.
-- Provider parsing/contract tests with sanitized fixtures.
-- RLS and authorization tests.
-- Order-state and idempotency tests.
-- Explicitly gated Alpaca Paper smoke tests.
-- Component tests.
-- Playwright coverage for the judge flow.
-- Lint, formatting, type checks, builds, and secret scanning in CI.
+```bat
+cd apps\api
+.venv\Scripts\python.exe -m ruff format --check .
+.venv\Scripts\python.exe -m ruff check .
+.venv\Scripts\python.exe -m mypy app tests
+.venv\Scripts\python.exe -m pytest
+.venv\Scripts\python.exe -m build --wheel
+.venv\Scripts\python.exe -m pip check
+```
 
-No test may contact a Live Alpaca endpoint.
+### Frontend
 
-## Deployment
+```bat
+cd apps\web
+npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
 
-### Web — Vercel
+### Seguridad e ignore rules
 
-- Deploy `apps/web`.
-- Store only appropriate public values as `NEXT_PUBLIC_*`.
-- Configure the Render API URL and Supabase Auth redirects.
+```bat
+git check-ignore -v apps\api\.env apps\web\.env.local
+git status --short
+```
 
-### API — Render Free
+Estos comandos comprueban reglas, no muestran contenido privado. La detección completa con Gitleaks corre en CI.
 
-- Deploy `apps/api` as a Python web service.
-- Listen on `0.0.0.0:$PORT`.
-- Configure `GET /health`.
-- Store all secrets in Render environment settings.
-- Expect the free service to sleep; the web UI must show a friendly waking state.
+### Despliegue manual de migraciones alojadas
 
-### Database/Auth — Supabase
+El workflow `Supabase hosted migrations` solo se inicia con `workflow_dispatch`, usa el environment protegido `supabase-development` y ejecuta preview por defecto. Tras revisar ese resultado, un segundo despacho con `apply_migrations=true` constituye la confirmación manual. Los secretos se configuran únicamente en GitHub:
 
-- Apply versioned migrations.
-- Use explicit grants and RLS.
-- Use current publishable/secret keys rather than creating new legacy-key integrations.
-- Run database advisors before the final demo.
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_DB_PASSWORD`
+- `SUPABASE_PROJECT_ID`
 
-## Documentation center
+El workflow enlaza el proyecto, lista las migraciones, ejecuta el dry-run, aplica el push, vuelve a listar y termina con lint remoto. La protección del environment debe exigir revisor antes de permitir el job.
 
-- [Product specification](docs/PRODUCT_SPEC.md)
-- [Trading strategy](docs/TRADING_STRATEGY.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Security and secrets](docs/SECURITY_AND_SECRETS.md)
-- [Three-day implementation plan](docs/IMPLEMENTATION_PLAN.md)
-- [UI generation prompt](docs/UI_GENERATOR_PROMPT.md)
-- [Audit of the inherited `.github`](docs/GITHUB_AUDIT.md)
-- [Master build prompt](.github/prompts/00-master-build.prompt.md)
+## Esquema inicial
 
-## Limitations to disclose to judges
+La migración crea perfiles/roles, compañías/sectores, presupuestos de proveedor, jobs, hechos financieros, valoraciones, screenings/criterios, oportunidades/aprobaciones, posiciones, órdenes/eventos, evidencia y auditoría. Usa `numeric` para importes, `timestamptz` para tiempo, UUID, checks, foreign keys e índices para RLS y recorridos principales.
 
-- Paper fills differ from real execution and do not model every market condition.
-- Free Render instances sleep and have cold starts.
-- Free AI and Alpha Vantage quotas can become unavailable.
-- News can explain context but does not prove causation.
-- Analyst estimates are uncertain.
-- Four-year fundamental history and historical multiples do not guarantee future returns.
-- The MVP is not approved for real-money operation.
+## Limitaciones actuales
 
-## Roadmap after the equity MVP
+- No hay conexión real a Alpaca, SEC, Alpha Vantage, Gemini u OpenRouter.
+- No se ejecutan órdenes, ni siquiera paper, durante la fundación.
+- pgTAP no se ejecuta en la computadora personal; su puerta definitiva es el stack efímero del runner de GitHub Actions.
+- Render Free puede dormir; la web lo comunica y mantiene todas las acciones deshabilitadas.
+- La estrategia no garantiza resultados futuros.
 
-- Validate the equity strategy with extended paper observation and reproducible backtests.
-- Add sector-specific capital rules only after evidence and tests.
-- Add options analysis/execution as an isolated module with its own risk model.
-- Replace free sleeping infrastructure before any reliability claim.
-- Add formal evaluation datasets for AI explanations and provider drift.
+## Siguiente fase
 
-## License
-
-License decision pending. Do not assume open-source redistribution terms until a license file is added.
+La siguiente fase debe implementar autenticación Supabase completa y repositorios del API, verificar RLS en CI y contra el proyecto alojado de forma sanitizada, y luego construir clientes con fixtures para Alpaca Market Data y SEC antes de cualquier camino de órdenes.
