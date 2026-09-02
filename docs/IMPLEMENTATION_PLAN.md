@@ -1,0 +1,102 @@
+# Three-Day MVP Implementation Plan
+
+The plan favors a complete, demonstrable vertical slice over broad but incomplete features.
+
+## Day 1 — Foundation and deterministic analysis
+
+### Phase 0: repository foundation
+
+- Scaffold `apps/web`, `apps/api`, and `supabase`.
+- Pin dependencies and commit lockfiles.
+- Configure linting, formatting, type checks, tests, and CI.
+- Add safe config validation and paper-only startup guard.
+- Create health/readiness endpoints.
+
+Exit gate: both apps run locally, CI is green, no secret is committed, and a bad/live Alpaca URL fails safely.
+
+### Phase 1: database and auth
+
+- Create initial Supabase migrations, explicit grants, RLS, indexes, and seed/demo operator.
+- Implement authenticated web/API boundary.
+- Persist job, screening, approval, order, evidence, provider-budget, and audit state.
+
+Exit gate: RLS tests prove anonymous and cross-user access is denied; operator paths work.
+
+### Phase 2: data ingestion and domain engine
+
+- Implement Alpaca asset/market/calendar/news clients.
+- Implement SEC submissions/company-facts client and normalized financial facts.
+- Implement Alpha Vantage estimate client with 25/day hard budget and caching.
+- Implement pure criterion, cluster, valuation, traffic-light, and quarterly-freeze functions.
+
+Exit gate: deterministic fixtures cover all formulas and edge cases; one company thesis is reproducible.
+
+## Day 2 — Portfolio, orders, agent, and UI
+
+### Phase 3: screening and portfolio risk
+
+- Universe filters, sector classification, 10–15 watchlist, portfolio limits, earnings window, freshness, and ranking.
+- Persist scan jobs and results with nonblocking progress.
+
+Exit gate: a fixture scan produces explainable candidates and `NO_TRADE` reasons.
+
+### Phase 4: Alpaca paper execution
+
+- Order preview and revalidation.
+- Paper market entry, fill reconciliation, initial stop, fair-price branch, +2R branch, 5% trailing, and fundamental exits.
+- Idempotency and independent approvals.
+- Official Alpaca MCP setup/smoke-test guide and Alpaca CLI smoke tests.
+
+Exit gate: paper test proves order lifecycle or a sanitized fixture simulates it when market timing prevents a live paper fill.
+
+### Phase 5: AI explanation
+
+- Gemini primary, fixed OpenRouter free fallback.
+- Strict input minimization and validated output envelope.
+- AI explains existing calculations/evidence only.
+
+Exit gate: disabling both LLMs leaves the deterministic app fully usable.
+
+### Phase 6: web experience
+
+- Implement the required screens from `PRODUCT_SPEC.md`.
+- Add stale/error/empty/loading/cold-start states.
+- Add charts with table/text alternatives and a persistent Paper banner.
+
+Exit gate: Playwright covers scan → thesis → approval/order preview → portfolio/audit.
+
+## Day 3 — Integration, deployment, and presentation
+
+### Phase 7: deployment
+
+- Deploy web to Vercel, API to Render Free, database/auth to Supabase.
+- Configure secrets only in platform settings.
+- Configure Render `/health`, CORS, Vercel API URL, and Supabase redirect URLs.
+- Validate cold-start behavior.
+
+### Phase 8: hardening and documentation
+
+- Run security scans, database advisors, full tests, production builds, and paper smoke tests.
+- Finalize README, architecture diagram, API docs, troubleshooting, limitations, and demo script.
+- Capture sanitized screenshots/video only after rotating any accidentally exposed key.
+
+Exit gate: a judge can understand and reproduce the demo from README.
+
+## De-scope order if time runs short
+
+Keep, in order:
+
+1. Deterministic strategy and evidence.
+2. Alpaca Paper order lifecycle.
+3. Portfolio/risk guards and audit.
+4. Functional dashboard/company/approval/portfolio screens.
+5. MCP and CLI verification documentation.
+
+Defer first:
+
+- Fancy animations.
+- Broad scheduler automation.
+- Multiple user roles.
+- Options trading.
+- Additional providers.
+- Complex backtesting.

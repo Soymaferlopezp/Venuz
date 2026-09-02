@@ -1,0 +1,38 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Tooling / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*.local.json
+*.log
+
+# Supabase local runtime
+supabase/.temp/
+
+# Local artifacts
+artifacts/
+tmp/
