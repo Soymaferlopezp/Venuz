@@ -33,6 +33,8 @@ Exit gate: CI pgTAP proves anonymous and cross-user access is denied on an ephem
 
 Exit gate: deterministic fixtures cover all formulas and edge cases; one company thesis is reproducible.
 
+Implemented: read-only SEC, Alpaca, and Alpha Vantage adapters; persistent cache and daily budget; deterministic criteria and valuation; quarterly freeze; authenticated analysis/watchlist/provider endpoints; connected minimum web views; and owner-scoped persistence. The approved providers do not yet supply a reliable future earnings date, so provider analyses fail safe to `NO_TRADE` when it is unavailable.
+
 ## Day 2 — Portfolio, orders, agent, and UI
 
 ### Phase 3: screening and portfolio risk

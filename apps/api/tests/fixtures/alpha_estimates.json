@@ -1,0 +1,11 @@
+{
+  "symbol": "AAPL",
+  "quarterlyEstimates": [
+    {
+      "date": "2026-12-31",
+      "estimatedEPSAvg": "2.10",
+      "estimatedEPSAvg7DaysAgo": "2.00",
+      "priorYearEPS": "1.85"
+    }
+  ]
+}

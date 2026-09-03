@@ -1,61 +1,83 @@
 # Venuz
 
-> Análisis fundamental trazable y controles deterministas para **Alpaca Paper Trading**.
+> Evidence-first fundamental screening for US equities, designed exclusively for Alpaca Paper Trading.
 
-Venuz es una aplicación web para evaluar acciones estadounidenses de calidad, explicar cada conclusión con evidencia y, en fases posteriores, gestionar exclusivamente órdenes simuladas. El modelo de IA nunca decide elegibilidad, riesgo ni ejecución.
+Venuz turns SEC filings, Alpaca market data, and narrowly scoped analyst estimates into a deterministic company thesis. Every criterion, valuation observation, exclusion, and state transition is reproducible and auditable. An LLM is never allowed to decide eligibility, risk, valuation, or trading actions.
 
-> **PAPER TRADING — NO REAL MONEY.** No es asesoría financiera ni un sistema de producción.
+> **PAPER TRADING - NO REAL MONEY.** Venuz is not financial advice and does not guarantee future results.
 
-## Estado implementado
+## Phase 2 status
 
-La fase de fundación incluye:
+The current vertical slice is functional:
 
-- `apps/web`: experiencia inicial en Next.js 16 con estado de `GET /health`, cold start de Render y fallo seguro.
-- `apps/api`: FastAPI + Pydantic v2 con configuración tipada y bloqueo estricto de cualquier modo o endpoint que no sea Alpaca Paper.
-- `supabase`: migración versionada, grants explícitos, RLS por propietario, idempotencia e historial de auditoría append-only.
-- `.github/workflows/ci.yml`: formato, lint, tipos, pruebas, builds, pgTAP efímero y detección de secretos.
-- `.github/workflows/supabase-hosted-migrations.yml`: despliegue manual y protegido de migraciones al proyecto alojado.
+- authenticated Next.js screens for the screener, company thesis, and provider budget;
+- a FastAPI analysis API with Supabase Auth bearer verification;
+- SEC Company Facts and Submissions ingestion;
+- read-only Alpaca assets, snapshots, daily bars, exchange calendar, and news adapters;
+- Alpha Vantage estimates and revisions with an atomic 25-request UTC daily budget;
+- deterministic universe filters, seven criteria, historical P/E and P/FCF clustering, valuation ranges, and quarterly freezing;
+- persistent provider cache, analyses, criteria, evidence, ratios, watchlists, jobs, and audit events;
+- explicit grants, owner-scoped RLS, and backend-only privileged writes.
 
-No hay llamadas a proveedores, lógica financiera, órdenes ni despliegues en esta fase.
+There are no order endpoints in Phase 2, and no Alpaca order is sent.
 
-## Arquitectura
+## Architecture
 
 ```text
 Browser
-  -> Next.js (presentación; solo variables NEXT_PUBLIC_*)
-      -> FastAPI (configuración privada y futuros controles deterministas)
-          -> Supabase Postgres/Auth (RLS, estado y auditoría)
-          -> Alpaca Paper / SEC / Alpha Vantage / IA (fases posteriores)
+  -> Next.js on Vercel
+       -> server session route -> Supabase Auth
+       -> authenticated server proxy
+            -> FastAPI on Render
+                 -> Supabase Postgres (RLS, cache, analysis, audit)
+                 -> SEC EDGAR (fundamentals and filing history)
+                 -> Alpaca Paper/Market Data (read-only in Phase 2)
+                 -> Alpha Vantage (estimates and revisions only)
 ```
 
-Responsabilidades:
+The browser never receives provider or database secret keys. Financial rules and monetary calculations live in Python and use `Decimal`; persisted timestamps use UTC. Invalid, stale, missing, or contradictory required data defaults to `NO_TRADE`.
 
-- La web no contiene secretos ni calcula reglas financieras.
-- El API valida su configuración al importar el entrypoint y no arranca fuera de Paper.
-- Supabase niega acceso anónimo. Los catálogos son de lectura autenticada y los datos operativos se filtran por `auth.uid()`.
-- Las escrituras operativas quedan reservadas al backend con la clave secreta de Supabase.
+See [the trading strategy](docs/TRADING_STRATEGY.md), [product specification](docs/PRODUCT_SPEC.md), [architecture](docs/ARCHITECTURE.md), and [security controls](docs/SECURITY_AND_SECRETS.md).
 
-Consulta [Arquitectura](docs/ARCHITECTURE.md), [Estrategia](docs/TRADING_STRATEGY.md), [Producto](docs/PRODUCT_SPEC.md) y [Seguridad](docs/SECURITY_AND_SECRETS.md).
+## Deterministic analysis
 
-## Requisitos
+The engine evaluates:
 
-- Windows Command Prompt (`cmd.exe`).
-- Node.js 22 o superior.
-- Python 3.12.x.
-- Supabase CLI 2.116.0 mediante `npx` para gestionar el proyecto alojado.
-- Git.
+1. four-year revenue trend;
+2. positive net income and net-margin trend;
+3. free cash flow, defined as operating cash flow minus capital expenditure, positive in at least three of four years and in the latest year;
+4. positive latest shareholders' equity, defined as assets minus liabilities;
+5. debt/equity below 1;
+6. both forward signals: consensus EPS above its previous estimate and expected EPS above the comparable prior period;
+7. self-relative valuation using separate P/E and P/FCF estimates.
 
-La fundación fue creada con Python 3.12.10, Node 24.20.0, npm 11.19.0 y Supabase CLI 2.116.0.
+The valuation engine excludes the current quarter, records included and excluded observations with reasons, selects a deterministic coherent cluster from the prior eight completed quarters, and uses its median. P/E and P/FCF target prices are never averaged. The lower result is the floor, the higher result is the ceiling, and the documented safety margin determines green states.
 
-## Variables de entorno
+A valid range is recalculated only after two complete US sessions following a report and remains frozen for the quarter. A purchase is blocked in the five sessions before a known earnings date. Because the currently approved sources do not provide a reliable future earnings calendar, an unavailable next date is explicitly persisted as `next_earnings_schedule_unavailable` and keeps the result at `NO_TRADE`.
 
-La plantilla raíz [`.env.example`](.env.example) enumera nombres y valores seguros. Nunca copies esa plantilla completa al frontend porque contiene nombres de variables privadas.
+## Requirements
 
-- `apps/api/.env`: configuración privada del servidor. Debe permanecer ignorada.
-- `apps/web/.env.local`: solo `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Debe permanecer ignorada.
-- `apps/web/.env.example`: plantilla pública opcional para el frontend.
+- Windows Command Prompt (`cmd.exe`)
+- Node.js 22+
+- Python 3.12
+- Git
+- access to a hosted Supabase project
+- paper Alpaca credentials, a descriptive SEC User-Agent, and an Alpha Vantage key for real provider analysis
 
-El API solo acepta:
+No local Supabase runtime, Docker, Podman, or WSL is used on developer machines.
+
+## Environment setup
+
+Use [`.env.example`](.env.example) as the inventory of variable names. Never commit populated environment files.
+
+- Create `apps/api/.env` with server-only values.
+- Create `apps/web/.env.local` with only:
+  - `NEXT_PUBLIC_APP_NAME`
+  - `NEXT_PUBLIC_API_BASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+The API refuses to start unless these safety settings remain in force:
 
 ```text
 TRADING_MODE=paper
@@ -64,13 +86,9 @@ ALPACA_TRADING_BASE_URL=https://paper-api.alpaca.markets
 AUTO_EXECUTION_ENABLED=false
 ```
 
-Los secretos se representan como `**********` y `/health` nunca devuelve estado de credenciales, cuentas ni proveedores.
+## Run locally with Command Prompt
 
-## Desarrollo local en Windows Command Prompt
-
-Desde la raíz del repositorio:
-
-### API
+API:
 
 ```bat
 cd apps\api
@@ -80,11 +98,7 @@ py -3.12 -m venv .venv
 .venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Abre `http://localhost:8000/health`. El proceso se detiene antes de servir tráfico si la configuración no es Paper.
-
-### Web
-
-En otra ventana de Command Prompt:
+Web, in another Command Prompt:
 
 ```bat
 cd apps\web
@@ -92,11 +106,40 @@ npm ci
 npm run dev
 ```
 
-Abre `http://localhost:3000`.
+Open `http://localhost:3000/sign-in`, sign in with a Supabase Auth user, open the screener, and run the provider-backed scan. Render Free cold starts are surfaced as a waiting state in the UI.
 
-### Supabase alojado
+To verify the real SEC and Alpaca read-only contracts without displaying credentials or touching orders:
 
-La base de datos de desarrollo, integración y demostración es el proyecto alojado. No se instala ni ejecuta Supabase localmente. Vincula el proyecto remoto y revisa cada migración desde Command Prompt:
+```bat
+cd apps\api
+.venv\Scripts\python.exe scripts\provider_read_smoke.py
+```
+
+Fixture mode is available only outside production for deterministic development and tests:
+
+```text
+POST /v1/analysis/AAPL
+{"mode":"fixture"}
+```
+
+## Authenticated API
+
+All Phase 2 routes require a valid Supabase bearer token:
+
+- `POST /v1/analysis/{symbol}`
+- `GET /v1/analysis/{symbol}/latest`
+- `GET /v1/analysis/{symbol}/criteria`
+- `GET /v1/analysis/{symbol}/valuation`
+- `GET /v1/analysis/{symbol}/evidence`
+- `POST /v1/watchlists/build?mode=provider`
+- `GET /v1/watchlists/latest`
+- `GET /v1/providers/status`
+
+The watchlist scan analyzes the reviewed Phase 2 universe, applies the documented eligibility filters, ranks results deterministically, and persists ten companies. No endpoint creates, previews, or submits an order.
+
+## Hosted Supabase migrations
+
+The hosted project is the official database runtime. Review every versioned migration from Command Prompt:
 
 ```bat
 npx --yes supabase@2.116.0 login
@@ -105,7 +148,7 @@ npx --yes supabase@2.116.0 migration list
 npx --yes supabase@2.116.0 db push --dry-run
 ```
 
-Solo después de revisar el dry-run y recibir aprobación explícita:
+After explicit review:
 
 ```bat
 npx --yes supabase@2.116.0 db push
@@ -113,15 +156,11 @@ npx --yes supabase@2.116.0 migration list
 npx --yes supabase@2.116.0 db lint --linked --level error
 ```
 
-`supabase db reset --linked` está terminantemente prohibido. `supabase start` y `supabase db reset --local` no forman parte del flujo de la máquina personal. Tampoco se automatizan `migration repair` ni `db pull`.
+Never run `supabase db reset --linked`. Do not automate `migration repair` or `db pull`. pgTAP runs only against the ephemeral Supabase stack created by GitHub Actions.
 
-Las tres suites pgTAP se ejecutan únicamente en GitHub Actions contra una instancia efímera creada dentro del runner. Ese job no recibe credenciales del proyecto alojado y siempre detiene el stack.
+## Verification
 
-No se incluye un usuario o contraseña demo en Git. Crea el operador mediante Supabase Auth y deja que el backend aprovisione `profiles` y `app_roles` en una fase autenticada.
-
-## Verificación
-
-### Backend
+Backend:
 
 ```bat
 cd apps\api
@@ -133,7 +172,7 @@ cd apps\api
 .venv\Scripts\python.exe -m pip check
 ```
 
-### Frontend
+Frontend:
 
 ```bat
 cd apps\web
@@ -142,39 +181,28 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm audit --audit-level=high
 ```
 
-### Seguridad e ignore rules
+Repository and secret hygiene:
 
 ```bat
+git diff --check
 git check-ignore -v apps\api\.env apps\web\.env.local
 git status --short
 ```
 
-Estos comandos comprueban reglas, no muestran contenido privado. La detección completa con Gitleaks corre en CI.
+CI additionally runs pgTAP, Gitleaks, dependency checks, and production builds.
 
-### Despliegue manual de migraciones alojadas
+## Current limitations
 
-El workflow `Supabase hosted migrations` solo se inicia con `workflow_dispatch`, usa el environment protegido `supabase-development` y ejecuta preview por defecto. Tras revisar ese resultado, un segundo despacho con `apply_migrations=true` constituye la confirmación manual. Los secretos se configuran únicamente en GitHub:
+- The Phase 2 universe is a reviewed ten-company shortlist, not a broad-market discovery service.
+- A reliable next earnings date is not available from the approved runtime sources, so a provider result remains `NO_TRADE` when that date is unknown.
+- Provider-backed analysis requires configured external credentials and consumes Alpha Vantage budget only on a cache miss.
+- AI explanation is intentionally deferred; deterministic results remain fully usable.
+- Order lifecycle, portfolio enforcement, Alpaca Trading MCP/CLI execution smoke tests, and paper execution belong to the next phase.
+- Render Free can sleep and introduce a cold-start delay.
 
-- `SUPABASE_ACCESS_TOKEN`
-- `SUPABASE_DB_PASSWORD`
-- `SUPABASE_PROJECT_ID`
+## Next phase
 
-El workflow enlaza el proyecto, lista las migraciones, ejecuta el dry-run, aplica el push, vuelve a listar y termina con lint remoto. La protección del environment debe exigir revisor antes de permitir el job.
-
-## Esquema inicial
-
-La migración crea perfiles/roles, compañías/sectores, presupuestos de proveedor, jobs, hechos financieros, valoraciones, screenings/criterios, oportunidades/aprobaciones, posiciones, órdenes/eventos, evidencia y auditoría. Usa `numeric` para importes, `timestamptz` para tiempo, UUID, checks, foreign keys e índices para RLS y recorridos principales.
-
-## Limitaciones actuales
-
-- No hay conexión real a Alpaca, SEC, Alpha Vantage, Gemini u OpenRouter.
-- No se ejecutan órdenes, ni siquiera paper, durante la fundación.
-- pgTAP no se ejecuta en la computadora personal; su puerta definitiva es el stack efímero del runner de GitHub Actions.
-- Render Free puede dormir; la web lo comunica y mantiene todas las acciones deshabilitadas.
-- La estrategia no garantiza resultados futuros.
-
-## Siguiente fase
-
-La siguiente fase debe implementar autenticación Supabase completa y repositorios del API, verificar RLS en CI y contra el proyecto alojado de forma sanitizada, y luego construir clientes con fixtures para Alpaca Market Data y SEC antes de cualquier camino de órdenes.
+Phase 3 should add portfolio-state ingestion and entry revalidation first, then the fully idempotent Alpaca Paper order lifecycle. It must preserve the 20% cash floor, 10% position cap, 20% sector cap, two-company sector limit, five-session earnings block, independent approvals, and audit trail before any paper order becomes eligible.

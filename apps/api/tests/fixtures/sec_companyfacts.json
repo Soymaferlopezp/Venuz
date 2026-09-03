@@ -1,0 +1,16 @@
+{
+  "cik": 320193,
+  "entityName": "Sanitized Fixture Corp.",
+  "facts": {
+    "us-gaap": {
+      "Revenues": {
+        "units": {
+          "USD": [
+            {"fy": 2024, "fp": "FY", "form": "10-K", "end": "2024-09-30", "filed": "2024-11-01", "val": 1000},
+            {"fy": 2025, "fp": "FY", "form": "10-K", "end": "2025-09-30", "filed": "2025-11-01", "val": 1100}
+          ]
+        }
+      }
+    }
+  }
+}

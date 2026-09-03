@@ -1,8 +1,10 @@
 # Generated from the Python 3.12 foundation environment. Install only after
 # installing this project so editable metadata remains the source of direct deps.
 annotated-types==0.8.0
+alpaca-py==0.44.0
 anyio==4.14.2
 certifi==2026.7.22
+charset-normalizer==3.5.1
 click==8.5.0
 colorama==0.4.6
 coverage==7.16.0
@@ -15,7 +17,10 @@ idna==3.19
 iniconfig==2.3.0
 mypy==1.17.1
 mypy_extensions==1.1.0
+msgpack==1.2.2
+numpy==2.5.2
 packaging==26.3
+pandas==3.0.5
 pathspec==1.1.1
 pluggy==1.6.0
 pydantic==2.11.7
@@ -24,12 +29,19 @@ pydantic_core==2.33.2
 Pygments==2.21.0
 pytest==8.4.1
 pytest-cov==6.2.1
+python-dateutil==2.9.0.post0
 python-dotenv==1.2.3
+pytz==2026.3.post1
 PyYAML==6.0.3
+requests==2.34.2
 ruff==0.12.7
+six==1.17.0
+sseclient-py==1.9.0
 starlette==0.47.3
 typing-inspection==0.4.4
 typing_extensions==4.16.0
+tzdata==2026.3
+urllib3==2.7.0
 uvicorn==0.35.0
 watchfiles==1.2.0
 websockets==17.1

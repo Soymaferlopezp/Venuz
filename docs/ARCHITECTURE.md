@@ -69,6 +69,21 @@ docs/
 - `agents`: explanation-only LLM orchestration with schema validation.
 - `audit`: immutable event trail.
 
+## Implemented Phase 2 request flow
+
+```text
+Authenticated browser request
+  -> Next.js server proxy (HttpOnly Supabase access token)
+  -> FastAPI bearer verification
+  -> persistent job
+  -> cached SEC + Alpaca + Alpha Vantage reads
+  -> deterministic normalization, criteria, clustering, and valuation
+  -> owner-scoped snapshots, evidence, watchlist, and audit rows
+  -> typed response
+```
+
+The analysis service has no order dependency. Provider failures are sanitized at the API boundary, scarce-provider budget is reserved atomically before a cache miss, and stale or missing required data cannot become trade eligible.
+
 ## Data-source ownership
 
 | Data | Primary source | Fallback/notes |

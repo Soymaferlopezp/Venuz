@@ -9,6 +9,11 @@ from app.factory import create_app
 
 
 @pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
+
+
+@pytest.fixture
 def valid_settings_data() -> dict[str, Any]:
     return {
         "app_env": "test",
