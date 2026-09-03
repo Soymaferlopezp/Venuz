@@ -8,14 +8,20 @@ Venuz turns SEC filings, Alpaca market data, and narrowly scoped analyst estimat
 
 ## Phase 3 status
 
-The public Phase 3 activation and deterministic safety slice is functional:
+The first two local Phase 3 slices are functional; the hosted Phase 3 migration remains pending review:
 
 - public access without registration through one **Activate Venuz** button;
 - one global cycle per strategy version, applicable US market session, and relevant-data cutoff;
 - atomic Postgres activation, global provider reservations, and durable Paper order idempotency keys;
 - sanitized public activation/status/latest/events endpoints;
 - deterministic market, data, eligibility, valuation, earnings, liquidity, drift, buying-power, cash, position, sector, and duplicate guards;
-- actual-fill-based 10% stop and +2R calculations;
+- actual-fill-based 10% initial stops and +2R objectives;
+- an `alpaca-py` Paper adapter behind a broker protocol; the network-free `FakeBroker` lives only under `apps/api/tests/fakes` and is excluded from production packages;
+- durable reservation before submission, stable `client_order_id` recovery, partial/full fill processing, and restart reconciliation;
+- 5% trailing protection after +2R while retaining 100% of the position, plus the estimated-price protection branch;
+- confirmed cancel-before-replace behavior that prevents overlapping closing orders;
+- automatic critical-deterioration exits and independent noncritical-red approvals;
+- append-only order/audit history and allowlisted cycle order, approval, and audit endpoints;
 - zero external order calls in automated tests.
 
 The Phase 2 analysis slice remains functional:
@@ -29,7 +35,7 @@ The Phase 2 analysis slice remains functional:
 - persistent provider cache, analyses, criteria, evidence, ratios, watchlists, jobs, and audit events;
 - explicit grants, owner-scoped RLS, and backend-only privileged writes.
 
-The public API accepts no visitor order instructions. Remote Alpaca Paper submission remains behind deterministic server checks and a durable idempotency key. No Alpaca order was sent during this implementation.
+The public API accepts no visitor order instructions. Alpaca Paper submission remains an internal application capability behind the complete deterministic preflight, durable intent reservation, and stable client identifiers. Auto-execution defaults to disabled; enabling it still invokes the same Paper-only, preflight, and idempotency gates. Automated verification injects only the test-local `FakeBroker`; no Alpaca credential or external order endpoint is used. No Alpaca order was sent during this implementation.
 
 ## Architecture
 
@@ -41,7 +47,7 @@ Browser
             -> FastAPI on Render
                  -> Supabase Postgres (RLS, cache, analysis, audit)
                  -> SEC EDGAR (fundamentals and filing history)
-                 -> Alpaca Paper/Market Data (read-only in Phase 2)
+                 -> Alpaca Market Data reads + gated Paper order lifecycle
                  -> Alpha Vantage (estimates and revisions only)
 ```
 
@@ -219,9 +225,9 @@ CI additionally runs pgTAP, Gitleaks, dependency checks, and production builds.
 - A reliable next earnings date is not available from the approved runtime sources, so a provider result remains `NO_TRADE` when that date is unknown.
 - Provider-backed analysis requires configured external credentials and consumes Alpha Vantage budget only on a cache miss.
 - AI explanation is intentionally deferred; deterministic results remain fully usable.
-- The durable cycle contract and deterministic preflight are implemented. Remote Paper submission/reconciliation remains disabled until the separately gated smoke test is reviewed.
+- The Paper lifecycle is implemented locally, but production execution remains disabled by configuration and no live Paper smoke test has been authorized.
 - Render Free can sleep and introduce a cold-start delay.
 
-## Next phase
+## Pending hosted checkpoint
 
-Phase 3 should add portfolio-state ingestion and entry revalidation first, then the fully idempotent Alpaca Paper order lifecycle. It must preserve the 20% cash floor, 10% position cap, 20% sector cap, two-company sector limit, five-session earnings block, independent approvals, and audit trail before any paper order becomes eligible.
+`supabase/migrations/20260903043000_phase3_global_cycles.sql` now contains both Phase 3 slices and is still unapplied. The next hosted action is a reviewed `supabase db push --dry-run`; applying the migration, deploying, or running an Alpaca Paper smoke test requires separate explicit authorization.

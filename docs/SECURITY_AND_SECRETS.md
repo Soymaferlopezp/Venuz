@@ -62,3 +62,7 @@ GitHub Actions stores `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, and `SUPA
 ## Public activation security decision
 
 Public activation does not use Supabase anonymous sign-in or visitor roles. Rate limiting is secondary abuse control; the primary defense is one durable cycle per deterministic key plus atomic provider reservations and unique Paper order intent keys. Public responses contain only safe states, evidence links, freshness, provenance, and blocking reasons. They never contain provider payloads, authorization headers, broker account details, or secrets.
+
+## Ambiguous Paper responses
+
+Every Paper command is reserved durably before broker access and uses a stable, unique `client_order_id`. A timeout or ambiguous response never authorizes a new intent: the service looks up the same identifier, persists a pending reconciliation state when it cannot prove the outcome, and retries only reconciliation. Closing protection is replaced only after remote cancellation is confirmed. Entry execution always requires the complete deterministic preflight, including when auto-execution is enabled; the setting is disabled by default. Automated tests inject the test-only `apps/api/tests/fakes/FakeBroker` and never read Alpaca credentials or use a network order endpoint.

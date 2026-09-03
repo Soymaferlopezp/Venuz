@@ -109,3 +109,9 @@ Defer first:
 ## Phase 3 execution amendment
 
 For this delivery, the official Phase 3 scope supersedes the older phase labels above: public global activation, screening/portfolio preflight, durable provider controls, and the Alpaca Paper execution contract are one vertical slice. Exit gate: concurrent activations converge on one cycle; every deterministic guard is tested; public responses are sanitized; and all order lifecycle tests use fakes with zero external submissions.
+
+## Phase 3 second-slice checkpoint
+
+Implemented locally: broker protocol and Paper-only `alpaca-py` adapter; mandatory fake-broker tests; durable idempotent submission; partial/full fill processing; restart reconciliation; initial 10% stop; +2R and estimated-price branches; 5% trailing protection while retaining the full position; cancel-confirm-replace enforcement; critical automatic exits; independent noncritical-red approvals; sanitized observation endpoints; and complete durable audit records.
+
+The schema expansion remains in the unapplied `20260903043000_phase3_global_cycles.sql` migration because that migration has never reached the hosted project. It also removes an invalid duplicate `client_order_id` alteration inherited from the first slice. Do not create a follow-up migration unless the Phase 3 migration is applied first. The hosted preview, apply, deployment, and Paper smoke test are separate approval gates.

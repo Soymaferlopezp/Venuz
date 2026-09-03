@@ -104,3 +104,7 @@ The audit page reconstructs a decision from provider inputs through criteria, ap
 ## Official public activation model
 
 The MVP is public without registration and exposes one primary action: **Activate Venuz**. Every visitor joins the same durable current cycle; no visitor identity, judge detection, anonymous Supabase user, operator role, or admin panel is created. The three visible stages — Exploring, Analyzing, and Paper Trading — are progress within one cycle, not separate executions. Stored real results remain available when a new cycle or provider call is unavailable.
+
+## Phase 3 lifecycle observation
+
+The public cycle experience can observe allowlisted order, approval, and audit timelines without receiving broker identifiers, account metadata, raw provider payloads, or any command endpoint. Partial fills, stop replacement, trailing activation, critical exits, nonblocking approvals, ambiguous-response recovery, and restart reconciliation are explicit visible states. All actual submissions remain internal, Paper-only, and subject to deterministic revalidation.

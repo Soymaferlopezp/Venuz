@@ -6,6 +6,8 @@ from fastapi.testclient import TestClient
 
 from app.core.config import PAPER_TRADING_URL, Settings
 from app.factory import create_app
+from app.repositories.orders import MemoryOrderRepository
+from tests.fakes.broker import FakeBroker
 
 
 @pytest.fixture
@@ -43,5 +45,11 @@ def settings(valid_settings_data: dict[str, Any]) -> Settings:
 
 @pytest.fixture
 def client(settings: Settings) -> Iterator[TestClient]:
-    with TestClient(create_app(settings)) as test_client:
+    with TestClient(
+        create_app(
+            settings,
+            broker_override=FakeBroker(),
+            order_repository_override=MemoryOrderRepository(),
+        )
+    ) as test_client:
         yield test_client

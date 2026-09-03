@@ -159,3 +159,11 @@ Render Free sleeps after inactivity and does not provide a free background worke
 ## Global public cycle
 
 `POST /v1/cycles/activate` atomically creates or returns a cycle keyed by strategy version, applicable US market session, and relevant-data cutoff. Postgres uniqueness is the idempotency boundary. `GET /v1/cycles/{cycle_id}`, `/events`, and `/latest` expose only sanitized envelopes. Provider reservations and Paper `client_order_id` values are durable, so retries and server restarts cannot duplicate consumption or orders. Public visitors never receive direct table access; the FastAPI service uses the server-only secret key and returns an allowlisted DTO.
+
+## Paper order lifecycle
+
+The execution service depends on a small asynchronous broker protocol. Production construction imports the installed `alpaca-py` package and binds the protocol to its trading client only after an exact Paper endpoint check. The network-free `FakeBroker` exists exclusively in `apps/api/tests/fakes` and is not shipped in the application wheel. Public routes are observation-only and never accept an order command. Entry submission requires the complete deterministic preflight decision; auto-execution defaults to disabled and, when enabled, calls the same guarded and idempotent submission path.
+
+Before submission, the service atomically reserves a global order intent in Postgres. The stable `client_order_id` is then queried before submit and reused after timeouts, ambiguous responses, or process restarts. Reconciliation stores cumulative entry and exit fills separately, derives held quantity from those totals, and records each broker snapshot. A closing-order transition must cancel and reconcile the previous close as canceled before a replacement can be reserved; a partial unique index is the database backstop against overlap.
+
+`global_positions`, `global_orders`, `global_order_events`, `global_approval_requests`, and `global_audit_events` are backend-only global lifecycle tables. They use explicit service-role grants, RLS with no visitor policies, immutable event triggers, and sanitized payloads. FastAPI maps them to allowlisted `/v1/cycles/{cycle_id}/orders`, `/approvals`, and `/audit` responses that omit client order IDs, broker IDs, account data, provider payloads, headers, and secrets.

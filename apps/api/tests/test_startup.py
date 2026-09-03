@@ -39,11 +39,13 @@ def test_process_refuses_live_endpoint_without_exposing_inputs(
 
 
 def test_process_starts_with_exact_paper_configuration(valid_settings_data: dict[str, Any]) -> None:
+    environment = _startup_environment(valid_settings_data)
+    environment["APP_ENV"] = "production"
     result = subprocess.run(
         [sys.executable, "-c", "import app.main"],
         capture_output=True,
         check=False,
-        env=_startup_environment(valid_settings_data),
+        env=environment,
         text=True,
         timeout=10,
     )

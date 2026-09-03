@@ -8,10 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.analysis import router as analysis_router
 from app.api.cycles import router as cycles_router
 from app.api.health import router as health_router
+from app.api.order_observation import router as order_observation_router
 from app.core.config import Settings
 from app.integrations.alpaca import AlpacaReadClient
+from app.integrations.alpaca_broker import AlpacaPyBroker
+from app.integrations.alpaca_sdk import create_paper_read_clients
 from app.integrations.alpha_vantage import AlphaVantageClient, BudgetStore, MemoryBudgetStore
 from app.integrations.base import AsyncJsonClient, CacheStore, MemoryCacheStore
+from app.integrations.broker import Broker
 from app.integrations.sec import SecEdgarClient
 from app.repositories.analysis import (
     AnalysisRepository,
@@ -20,11 +24,27 @@ from app.repositories.analysis import (
     SupabaseRestStore,
 )
 from app.repositories.cycles import SupabaseCycleRepository
+from app.repositories.orders import OrderRepository, SupabaseOrderRepository
 from app.services.cycles import MemoryCycleRepository
+from app.services.orders import OrderLifecycleService
 from app.services.provider_analysis import ProviderAnalysisService
 
 
-def create_app(settings: Settings) -> FastAPI:
+def create_app(
+    settings: Settings,
+    *,
+    broker_override: Broker | None = None,
+    order_repository_override: OrderRepository | None = None,
+) -> FastAPI:
+    if settings.app_env == "test" and (
+        broker_override is None or order_repository_override is None
+    ):
+        raise RuntimeError("Test mode requires explicit network-free order dependencies")
+    if settings.app_env != "test" and (
+        broker_override is not None or order_repository_override is not None
+    ):
+        raise RuntimeError("Broker overrides are forbidden outside test mode")
+
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.settings = settings
@@ -71,6 +91,23 @@ def create_app(settings: Settings) -> FastAPI:
             if settings.app_env == "test"
             else SupabaseCycleRepository(store)
         )
+        if settings.app_env == "test":
+            assert broker_override is not None
+            assert order_repository_override is not None
+            app.state.order_repository = order_repository_override
+            app.state.broker = broker_override
+        else:
+            app.state.order_repository = SupabaseOrderRepository(store)
+            sdk = create_paper_read_clients(
+                settings.alpaca_api_key.get_secret_value(),
+                settings.alpaca_secret_key.get_secret_value(),
+            )
+            app.state.broker = AlpacaPyBroker(sdk.trading)
+        app.state.order_service = OrderLifecycleService(
+            app.state.order_repository,
+            app.state.broker,
+            auto_execution_enabled=settings.auto_execution_enabled,
+        )
         try:
             yield
         finally:
@@ -92,4 +129,5 @@ def create_app(settings: Settings) -> FastAPI:
     application.include_router(health_router)
     application.include_router(analysis_router)
     application.include_router(cycles_router)
+    application.include_router(order_observation_router)
     return application

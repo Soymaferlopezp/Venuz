@@ -99,6 +99,26 @@ class PreflightDecision(BaseModel):
     guards: tuple[GuardResult, ...]
 
 
+PREFLIGHT_GUARD_CODES = frozenset(
+    {
+        "regular_market_open",
+        "data_sufficient",
+        "company_eligible",
+        "criteria_passed",
+        "valuation_margin",
+        "earnings_window",
+        "liquidity_and_spread",
+        "price_drift",
+        "buying_power",
+        "minimum_cash",
+        "position_cap",
+        "sector_cap",
+        "sector_company_cap",
+        "no_duplicate",
+    }
+)
+
+
 def evaluate_preflight(value: PreflightInput) -> PreflightDecision:
     checks = (
         ("regular_market_open", value.market_open and value.regular_session),
