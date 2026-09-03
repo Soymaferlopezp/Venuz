@@ -37,6 +37,7 @@ class Settings(BaseSettings):
         default_factory=lambda: [AnyHttpUrl("http://localhost:3000")]
     )
     app_timezone: str = "America/New_York"
+    strategy_version: str = Field(default="2026.09", min_length=1, max_length=32)
 
     supabase_url: AnyHttpUrl
     supabase_secret_key: SecretStr = Field(min_length=1)
@@ -74,8 +75,6 @@ class Settings(BaseSettings):
             raise ValueError(f"Alpaca trading endpoint must be exactly {PAPER_TRADING_URL}")
         if not self.alpaca_paper:
             raise ValueError("ALPACA_PAPER must be true")
-        if self.auto_execution_enabled:
-            raise ValueError("AUTO_EXECUTION_ENABLED must remain false during foundation")
         return self
 
 

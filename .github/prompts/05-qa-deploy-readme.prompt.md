@@ -13,3 +13,7 @@ Deliver:
 - A concise demo script that works even if a free provider is rate-limited by using clearly labeled deterministic fixtures.
 
 Do not claim production readiness, profitability, real performance, or 24/7 uptime.
+
+## Public-cycle QA amendment
+
+Verify 100 concurrent activations converge on one durable cycle, retries and restarts cannot duplicate a Paper order, quotas are reserved atomically, and public DTOs are sanitized. The English README must explain cloning, personal credentials, local execution, and the distinction between stored real, cached, blocked, and Paper-submitted results.

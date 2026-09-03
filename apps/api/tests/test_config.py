@@ -61,11 +61,15 @@ def test_secret_values_are_masked(valid_settings_data: dict[str, Any]) -> None:
     assert "**********" in rendered
 
 
-def test_rejects_auto_execution_during_foundation(valid_settings_data: dict[str, Any]) -> None:
+def test_allows_auto_execution_with_paper_only_configuration(
+    valid_settings_data: dict[str, Any],
+) -> None:
     valid_settings_data["auto_execution_enabled"] = True
 
-    with pytest.raises(ValidationError, match="must remain false"):
-        build_settings(valid_settings_data)
+    settings = build_settings(valid_settings_data)
+
+    assert settings.auto_execution_enabled is True
+    assert settings.trading_mode == "paper"
 
 
 def test_loads_comma_separated_cors_origins_from_environment(

@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.analysis import router as analysis_router
+from app.api.cycles import router as cycles_router
 from app.api.health import router as health_router
 from app.core.config import Settings
 from app.integrations.alpaca import AlpacaReadClient
@@ -18,6 +19,8 @@ from app.repositories.analysis import (
     SupabaseAnalysisRepository,
     SupabaseRestStore,
 )
+from app.repositories.cycles import SupabaseCycleRepository
+from app.services.cycles import MemoryCycleRepository
 from app.services.provider_analysis import ProviderAnalysisService
 
 
@@ -63,6 +66,11 @@ def create_app(settings: Settings) -> FastAPI:
             ),
         )
         app.state.provider_store = budget
+        app.state.cycle_repository = (
+            MemoryCycleRepository()
+            if settings.app_env == "test"
+            else SupabaseCycleRepository(store)
+        )
         try:
             yield
         finally:
@@ -83,4 +91,5 @@ def create_app(settings: Settings) -> FastAPI:
     )
     application.include_router(health_router)
     application.include_router(analysis_router)
+    application.include_router(cycles_router)
     return application

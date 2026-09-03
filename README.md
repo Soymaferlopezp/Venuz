@@ -6,9 +6,19 @@ Venuz turns SEC filings, Alpaca market data, and narrowly scoped analyst estimat
 
 > **PAPER TRADING - NO REAL MONEY.** Venuz is not financial advice and does not guarantee future results.
 
-## Phase 2 status
+## Phase 3 status
 
-The current vertical slice is functional:
+The public Phase 3 activation and deterministic safety slice is functional:
+
+- public access without registration through one **Activate Venuz** button;
+- one global cycle per strategy version, applicable US market session, and relevant-data cutoff;
+- atomic Postgres activation, global provider reservations, and durable Paper order idempotency keys;
+- sanitized public activation/status/latest/events endpoints;
+- deterministic market, data, eligibility, valuation, earnings, liquidity, drift, buying-power, cash, position, sector, and duplicate guards;
+- actual-fill-based 10% stop and +2R calculations;
+- zero external order calls in automated tests.
+
+The Phase 2 analysis slice remains functional:
 
 - authenticated Next.js screens for the screener, company thesis, and provider budget;
 - a FastAPI analysis API with Supabase Auth bearer verification;
@@ -19,7 +29,7 @@ The current vertical slice is functional:
 - persistent provider cache, analyses, criteria, evidence, ratios, watchlists, jobs, and audit events;
 - explicit grants, owner-scoped RLS, and backend-only privileged writes.
 
-There are no order endpoints in Phase 2, and no Alpaca order is sent.
+The public API accepts no visitor order instructions. Remote Alpaca Paper submission remains behind deterministic server checks and a durable idempotency key. No Alpaca order was sent during this implementation.
 
 ## Architecture
 
@@ -106,7 +116,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000/sign-in`, sign in with a Supabase Auth user, open the screener, and run the provider-backed scan. Render Free cold starts are surfaced as a waiting state in the UI.
+Open `http://localhost:3000` and select **Activate Venuz**. Registration is not required for the public global cycle. Render Free cold starts are surfaced honestly.
 
 To verify the real SEC and Alpaca read-only contracts without displaying credentials or touching orders:
 
@@ -122,7 +132,16 @@ POST /v1/analysis/AAPL
 {"mode":"fixture"}
 ```
 
-## Authenticated API
+## Public cycle API
+
+- `POST /v1/cycles/activate` creates or joins the current global cycle atomically.
+- `GET /v1/cycles/{cycle_id}` returns sanitized progress and blocking reasons.
+- `GET /v1/cycles/{cycle_id}/events` supports lightweight polling.
+- `GET /v1/cycles/latest` returns the latest stored real result as historical data.
+
+Repeated requests for the same deterministic key return the same `cycle_id`; browser identity, cookies, and memory are not the idempotency boundary.
+
+## Authenticated analysis API
 
 All Phase 2 routes require a valid Supabase bearer token:
 
@@ -200,7 +219,7 @@ CI additionally runs pgTAP, Gitleaks, dependency checks, and production builds.
 - A reliable next earnings date is not available from the approved runtime sources, so a provider result remains `NO_TRADE` when that date is unknown.
 - Provider-backed analysis requires configured external credentials and consumes Alpha Vantage budget only on a cache miss.
 - AI explanation is intentionally deferred; deterministic results remain fully usable.
-- Order lifecycle, portfolio enforcement, Alpaca Trading MCP/CLI execution smoke tests, and paper execution belong to the next phase.
+- The durable cycle contract and deterministic preflight are implemented. Remote Paper submission/reconciliation remains disabled until the separately gated smoke test is reviewed.
 - Render Free can sleep and introduce a cold-start delay.
 
 ## Next phase

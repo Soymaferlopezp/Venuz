@@ -1,54 +1,41 @@
-import {
-  ArrowRight,
-  Database,
-  FileSearch,
-  Fingerprint,
-  Landmark,
-  ShieldCheck,
-} from "lucide-react";
+import { Fingerprint, Landmark, SearchCheck, ShieldCheck } from "lucide-react";
 
-import { ApiHealth } from "@/components/health/api-health";
+import { ActivationPanel } from "@/components/cycles/activation-panel";
 
 const principles = [
   {
-    icon: FileSearch,
-    title: "Evidencia antes que narrativa",
-    body: "Cada decisión conservará fórmula, fecha, fuente y procedencia. La IA explica; las reglas deterministas deciden.",
+    icon: SearchCheck,
+    title: "Evidence before narrative",
+    body: "Every decision retains its formula, timestamp, source, and provenance. AI explains; deterministic rules decide.",
   },
   {
     icon: ShieldCheck,
-    title: "Riesgo explícito",
-    body: "El sistema protege 20% de efectivo y limita posiciones y sectores antes de habilitar cualquier acción.",
+    title: "Risk is explicit",
+    body: "Venuz preserves at least 20% cash and enforces position and sector limits before any Paper order is eligible.",
   },
   {
     icon: Fingerprint,
-    title: "Auditable de extremo a extremo",
-    body: "Análisis, aprobaciones y futuros cambios de órdenes quedan vinculados por identificadores e inputs verificables.",
+    title: "Durably idempotent",
+    body: "Every visitor joins the same current cycle. Retries cannot multiply analyses, provider usage, or orders.",
   },
 ];
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#f6f7f4] text-slate-950">
-      <div className="border-b border-amber-300 bg-amber-100 px-4 py-2 text-center text-xs font-bold tracking-[0.18em] text-amber-950 sm:text-sm">
-        PAPER TRADING — NO REAL MONEY
+    <main className="min-h-screen bg-[#f4f1e8] text-slate-950">
+      <div className="border-b border-amber-300 bg-amber-200 px-4 py-2 text-center text-xs font-bold tracking-[0.2em] text-slate-950">
+        ALPACA PAPER TRADING · NO REAL MONEY
       </div>
-
       <nav
-        aria-label="Navegación principal"
+        aria-label="Primary navigation"
         className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-10"
       >
-        <a
-          href="#inicio"
-          className="flex items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-900"
-        >
-          <span className="grid size-10 place-items-center rounded-xl bg-slate-950 text-sm font-bold text-amber-300">
+        <a href="#top" className="flex items-center gap-3">
+          <span className="grid size-10 place-items-center rounded-xl bg-slate-950 font-bold text-amber-300">
             V
           </span>
           <span>
-            <span className="block text-lg font-semibold tracking-tight">
-              Venuz
-            </span>
+            <span className="block text-lg font-semibold">Venuz</span>
             <span className="block text-[0.65rem] uppercase tracking-[0.2em] text-slate-500">
               Evidence-first equities
             </span>
@@ -59,70 +46,38 @@ export default function Home() {
           Alpaca Paper only
         </span>
       </nav>
-
       <section
-        id="inicio"
-        className="mx-auto grid max-w-7xl gap-12 px-6 pb-16 pt-12 lg:grid-cols-[1.25fr_0.75fr] lg:px-10 lg:pb-24 lg:pt-20"
+        id="top"
+        className="mx-auto grid max-w-7xl gap-12 px-6 pb-20 pt-10 lg:grid-cols-[1.2fr_0.8fr] lg:px-10 lg:pt-20"
       >
         <div>
-          <p className="mb-5 text-sm font-semibold uppercase tracking-[0.18em] text-emerald-800">
-            Estrategia fundamental determinista
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-800">
+            Deterministic fundamental strategy
           </p>
-          <h1 className="max-w-4xl text-5xl font-semibold leading-[1.02] tracking-[-0.055em] text-slate-950 sm:text-6xl lg:text-7xl">
-            Entender el porqué antes de simular una operación.
+          <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-[-0.055em] sm:text-7xl">
+            Know why before a trade is simulated.
           </h1>
-          <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-            Venuz identifica acciones estadounidenses de calidad, aplica reglas
-            de valoración y riesgo transparentes y conserva la evidencia de cada
-            conclusión.
+          <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600">
+            Venuz screens high-quality US equities, explains every rule with
+            real evidence, and submits only to Alpaca Paper after every safety
+            guard passes.
           </p>
-          <a
-            href="#fundacion"
-            className="mt-9 inline-flex items-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-950"
-          >
-            Explorar la fundación
-            <ArrowRight aria-hidden="true" className="size-4" />
-          </a>
         </div>
-
-        <aside className="self-end rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.45)] sm:p-8">
-          <div className="mb-6 flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-xl bg-emerald-50 text-emerald-800">
-              <Database aria-hidden="true" className="size-5" />
-            </span>
-            <div>
-              <p className="font-semibold">Estado de la fundación</p>
-              <p className="text-sm text-slate-500">
-                Contrato público y seguro
-              </p>
-            </div>
-          </div>
-          <ApiHealth />
-        </aside>
+        <ActivationPanel />
       </section>
-
-      <section
-        id="fundacion"
-        aria-labelledby="foundation-title"
-        className="border-y border-slate-200 bg-white"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
-          <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Controles desde el primer día
-            </p>
-            <h2
-              id="foundation-title"
-              className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl"
-            >
-              Una base diseñada para fallar de forma segura.
-            </h2>
-          </div>
+      <section className="border-y border-slate-300 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Built to stop safely
+          </p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+            One transparent cycle, shared by everyone.
+          </h2>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {principles.map(({ icon: Icon, title, body }) => (
               <article
                 key={title}
-                className="rounded-2xl border border-slate-200 bg-[#fafbf8] p-6"
+                className="rounded-2xl border border-slate-200 bg-[#faf9f5] p-6"
               >
                 <Icon aria-hidden="true" className="size-5 text-emerald-800" />
                 <h3 className="mt-5 text-lg font-semibold">{title}</h3>
@@ -132,12 +87,19 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <footer className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between lg:px-10">
-        <p>Venuz · Fundación local · Sin órdenes habilitadas</p>
-        <p>
-          No es asesoría financiera. Rendimientos reales no están representados.
+      <section id="setup" className="mx-auto max-w-7xl px-6 py-12 lg:px-10">
+        <h2 className="text-xl font-semibold">
+          Run Venuz with your own credentials
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+          Clone the repository and follow the README. Never paste keys into the
+          browser; all broker and provider secrets belong in the API
+          environment.
         </p>
+      </section>
+      <footer className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-8 text-sm text-slate-500 sm:flex-row sm:justify-between lg:px-10">
+        <p>Venuz · Global cycle · Alpaca Paper only</p>
+        <p>Not financial advice. No real performance is represented.</p>
       </footer>
     </main>
   );

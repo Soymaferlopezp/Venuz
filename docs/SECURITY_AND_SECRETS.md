@@ -58,3 +58,7 @@ GitHub Actions stores `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, and `SUPA
 3. Inspect provider and application logs for use.
 4. Reissue with the narrowest available access.
 5. Record a sanitized incident note and prevention action.
+
+## Public activation security decision
+
+Public activation does not use Supabase anonymous sign-in or visitor roles. Rate limiting is secondary abuse control; the primary defense is one durable cycle per deterministic key plus atomic provider reservations and unique Paper order intent keys. Public responses contain only safe states, evidence links, freshness, provenance, and blocking reasons. They never contain provider payloads, authorization headers, broker account details, or secrets.

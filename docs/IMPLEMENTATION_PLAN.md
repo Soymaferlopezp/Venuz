@@ -105,3 +105,7 @@ Defer first:
 - Options trading.
 - Additional providers.
 - Complex backtesting.
+
+## Phase 3 execution amendment
+
+For this delivery, the official Phase 3 scope supersedes the older phase labels above: public global activation, screening/portfolio preflight, durable provider controls, and the Alpaca Paper execution contract are one vertical slice. Exit gate: concurrent activations converge on one cycle; every deterministic guard is tested; public responses are sanitized; and all order lifecycle tests use fakes with zero external submissions.

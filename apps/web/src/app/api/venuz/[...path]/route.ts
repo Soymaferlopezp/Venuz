@@ -1,6 +1,11 @@
 import { cookies } from "next/headers";
 
-const ALLOWED_ROOTS = new Set(["analysis", "watchlists", "providers"]);
+const ALLOWED_ROOTS = new Set([
+  "analysis",
+  "watchlists",
+  "providers",
+  "cycles",
+]);
 
 async function proxy(
   request: Request,
@@ -11,7 +16,8 @@ async function proxy(
     return Response.json({ detail: "Unsupported API path" }, { status: 404 });
   }
   const token = (await cookies()).get("venuz_access_token")?.value;
-  if (!token) {
+  const isPublicCycle = path[0] === "cycles";
+  if (!token && !isPublicCycle) {
     return Response.json(
       { detail: "Authentication required" },
       { status: 401 },
@@ -32,7 +38,7 @@ async function proxy(
     const upstream = await fetch(upstreamUrl, {
       method: request.method,
       headers: {
-        Authorization: "Bearer " + token,
+        ...(token ? { Authorization: "Bearer " + token } : {}),
         ...(body ? { "Content-Type": "application/json" } : {}),
       },
       body: body || undefined,

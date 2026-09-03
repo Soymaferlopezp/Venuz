@@ -14,3 +14,7 @@ Requirements:
 - Component and Playwright tests for the complete demo flow.
 
 Do not generate generic trading-dashboard visuals or invent financial results.
+
+## Public MVP amendment
+
+Replace sign-in-first and role-based visitor proposals with a public landing page and one **Activate Venuz** button. Display Exploring, Analyzing, and Paper Trading as stages of the same global cycle. Provide honest quota/provider/market/data blocking states plus links to the last real analysis, retry, repository, and setup instructions. Never display invented results.

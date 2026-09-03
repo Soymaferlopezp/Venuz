@@ -16,3 +16,7 @@ Deliver:
 - Integration tests with fakes plus explicitly gated real Paper smoke tests.
 
 Never create or document a Live credential path. Never overlap closing orders.
+
+## Official public-cycle amendment
+
+Implement Paper execution only as part of the single public global cycle. `Activate Venuz` joins or returns that cycle; it never creates a visitor-specific analysis or order. Cycle creation, provider reservations, state transitions, and order idempotency must survive restarts through Postgres. Tests must use broker fakes and must not submit an external Paper order.

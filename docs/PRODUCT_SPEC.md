@@ -100,3 +100,7 @@ The audit page reconstructs a decision from provider inputs through criteria, ap
 - Paper order can be submitted and its state reconciled when credentials are available.
 - Approval requests do not block unrelated work.
 - README explains setup, architecture, strategy, integrations, limitations, and demonstration steps.
+
+## Official public activation model
+
+The MVP is public without registration and exposes one primary action: **Activate Venuz**. Every visitor joins the same durable current cycle; no visitor identity, judge detection, anonymous Supabase user, operator role, or admin panel is created. The three visible stages — Exploring, Analyzing, and Paper Trading — are progress within one cycle, not separate executions. Stored real results remain available when a new cycle or provider call is unavailable.

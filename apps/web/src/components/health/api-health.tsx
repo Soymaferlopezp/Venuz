@@ -1,5 +1,4 @@
 "use client";
-
 import {
   CircleAlert,
   LoaderCircle,
@@ -8,51 +7,39 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-
 type HealthState =
   | { kind: "loading" }
   | { kind: "waking" }
   | { kind: "ready"; checkedAt: string }
   | { kind: "error" };
-
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-const WAKING_DELAY_MS = 1800;
-const REQUEST_TIMEOUT_MS = 12000;
-
-function isSafeHealthPayload(
+function safe(
   value: unknown,
 ): value is { status: "ok"; trading_mode: "paper" } {
-  if (typeof value !== "object" || value === null) return false;
-  const payload = value as Record<string, unknown>;
-  return payload.status === "ok" && payload.trading_mode === "paper";
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as Record<string, unknown>).status === "ok" &&
+    (value as Record<string, unknown>).trading_mode === "paper"
+  );
 }
-
 export function ApiHealth() {
   const [state, setState] = useState<HealthState>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
-
   useEffect(() => {
     const controller = new AbortController();
-    const wakingTimer = window.setTimeout(
-      () => setState({ kind: "waking" }),
-      WAKING_DELAY_MS,
-    );
-    const abortTimer = window.setTimeout(
-      () => controller.abort(),
-      REQUEST_TIMEOUT_MS,
-    );
-
+    const waking = window.setTimeout(() => setState({ kind: "waking" }), 1800);
+    const abort = window.setTimeout(() => controller.abort(), 12000);
     void fetch(`${API_BASE_URL}/health`, {
       headers: { Accept: "application/json" },
       cache: "no-store",
       signal: controller.signal,
     })
       .then(async (response) => {
-        if (!response.ok) throw new Error("Health endpoint unavailable");
+        if (!response.ok) throw new Error();
         const payload: unknown = await response.json();
-        if (!isSafeHealthPayload(payload))
-          throw new Error("Unsafe health response");
+        if (!safe(payload)) throw new Error();
         setState({
           kind: "ready",
           checkedAt: new Date().toLocaleTimeString([], {
@@ -63,82 +50,55 @@ export function ApiHealth() {
       })
       .catch(() => setState({ kind: "error" }))
       .finally(() => {
-        window.clearTimeout(wakingTimer);
-        window.clearTimeout(abortTimer);
+        clearTimeout(waking);
+        clearTimeout(abort);
       });
-
     return () => {
       controller.abort();
-      window.clearTimeout(wakingTimer);
-      window.clearTimeout(abortTimer);
+      clearTimeout(waking);
+      clearTimeout(abort);
     };
   }, [attempt]);
-
-  if (state.kind === "loading") {
+  if (state.kind === "loading")
     return (
-      <div
-        role="status"
-        className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-700"
-      >
-        <LoaderCircle aria-hidden="true" className="mb-3 size-5 animate-spin" />
-        <p className="font-medium">Comprobando API…</p>
-        <p className="mt-1 text-sm text-slate-500">
-          Validando el contrato de salud.
+      <div role="status" className="rounded-2xl bg-slate-50 p-5">
+        <LoaderCircle className="mb-3 size-5 animate-spin" />
+        <p className="font-medium">Checking API…</p>
+        <p className="text-sm text-slate-500">
+          Validating the Paper-only contract.
         </p>
       </div>
     );
-  }
-
-  if (state.kind === "waking") {
+  if (state.kind === "waking")
     return (
-      <div
-        role="status"
-        className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950"
-      >
-        <Server aria-hidden="true" className="mb-3 size-5" />
-        <p className="font-medium">Render está despertando</p>
-        <p className="mt-1 text-sm text-amber-800">
-          El servicio gratuito puede tardar unos segundos. Seguimos esperando.
-        </p>
+      <div role="status" className="rounded-2xl bg-amber-50 p-5">
+        <Server className="mb-3 size-5" />
+        <p className="font-medium">Render is waking up</p>
+        <p className="text-sm">The free service may need a few seconds.</p>
       </div>
     );
-  }
-
-  if (state.kind === "error") {
+  if (state.kind === "error")
     return (
-      <div
-        role="alert"
-        className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-950"
-      >
-        <CircleAlert aria-hidden="true" className="mb-3 size-5" />
-        <p className="font-medium">API no disponible</p>
-        <p className="mt-1 text-sm text-red-800">
-          No se habilita ninguna acción. Revisa el backend o inténtalo otra vez.
-        </p>
+      <div role="alert" className="rounded-2xl bg-red-50 p-5">
+        <CircleAlert className="mb-3 size-5" />
+        <p className="font-medium">API unavailable</p>
+        <p className="text-sm">No action is enabled.</p>
         <button
-          type="button"
           onClick={() => {
             setState({ kind: "loading" });
-            setAttempt((current) => current + 1);
+            setAttempt((value) => value + 1);
           }}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-900"
         >
-          <RefreshCw aria-hidden="true" className="size-4" />
-          Reintentar
+          <RefreshCw className="inline size-4" /> Retry
         </button>
       </div>
     );
-  }
-
   return (
-    <div
-      role="status"
-      className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950"
-    >
-      <ShieldCheck aria-hidden="true" className="mb-3 size-5" />
-      <p className="font-medium">API operativa · modo paper</p>
-      <p className="mt-1 text-sm text-emerald-800">
-        Contrato verificado a las {state.checkedAt}. No se exponen credenciales.
+    <div role="status" className="rounded-2xl bg-emerald-50 p-5">
+      <ShieldCheck className="mb-3 size-5" />
+      <p className="font-medium">API ready · Paper mode</p>
+      <p className="text-sm">
+        Verified at {state.checkedAt}. No credentials are exposed.
       </p>
     </div>
   );

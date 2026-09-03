@@ -155,3 +155,7 @@ Render Free sleeps after inactivity and does not provide a free background worke
 - `db reset --linked` is forbidden. `supabase start` and `db reset --local` are reserved exclusively for the ephemeral GitHub Actions runner.
 - pgTAP executes only in validation CI against that ephemeral runner database, never against the shared hosted project.
 - Hosted migration deployment is a separate manual workflow protected by the `supabase-development` GitHub environment, concurrency control, timeout, and repository secrets.
+
+## Global public cycle
+
+`POST /v1/cycles/activate` atomically creates or returns a cycle keyed by strategy version, applicable US market session, and relevant-data cutoff. Postgres uniqueness is the idempotency boundary. `GET /v1/cycles/{cycle_id}`, `/events`, and `/latest` expose only sanitized envelopes. Provider reservations and Paper `client_order_id` values are durable, so retries and server restarts cannot duplicate consumption or orders. Public visitors never receive direct table access; the FastAPI service uses the server-only secret key and returns an allowlisted DTO.

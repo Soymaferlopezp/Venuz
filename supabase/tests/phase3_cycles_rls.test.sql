@@ -1,0 +1,16 @@
+begin;
+select plan(12);
+select has_table('public','global_cycles','global cycles exist');
+select has_table('public','global_cycle_events','cycle events exist');
+select has_table('public','global_provider_budgets','global budgets exist');
+select has_function('public','activate_global_cycle',array['text','timestamp with time zone'],'atomic activation exists');
+select has_function('public','reserve_global_provider_budget',array['text','date','integer'],'atomic reservation exists');
+select ok((select relrowsecurity from pg_class where oid='public.global_cycles'::regclass),'cycle RLS enabled');
+select ok((select relrowsecurity from pg_class where oid='public.global_cycle_events'::regclass),'event RLS enabled');
+select ok((select relrowsecurity from pg_class where oid='public.global_provider_budgets'::regclass),'budget RLS enabled');
+select ok(not has_table_privilege('anon','public.global_cycles','SELECT'),'anon cannot query tables');
+select ok(not has_table_privilege('authenticated','public.global_cycles','SELECT'),'authenticated cannot query tables');
+select ok(has_table_privilege('service_role','public.global_cycles','INSERT'),'backend can create cycles');
+select col_is_unique('public','global_cycles','cycle_key','cycle key is unique');
+select * from finish();
+rollback;

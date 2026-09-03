@@ -20,9 +20,9 @@ describe("ApiHealth", () => {
       }),
     );
     render(<ApiHealth />);
-    expect(screen.getByText("Comprobando API…")).toBeInTheDocument();
+    expect(screen.getByText("Checking API…")).toBeInTheDocument();
     await act(async () => Promise.resolve());
-    expect(screen.getByText("API operativa · modo paper")).toBeInTheDocument();
+    expect(screen.getByText("API ready · Paper mode")).toBeInTheDocument();
   });
 
   it("identifies a sleeping Render service while the request is pending", async () => {
@@ -32,7 +32,7 @@ describe("ApiHealth", () => {
     );
     render(<ApiHealth />);
     await act(async () => vi.advanceTimersByTimeAsync(1800));
-    expect(screen.getByText("Render está despertando")).toBeInTheDocument();
+    expect(screen.getByText("Render is waking up")).toBeInTheDocument();
   });
 
   it("fails closed for an invalid health response", async () => {
@@ -45,6 +45,6 @@ describe("ApiHealth", () => {
     );
     render(<ApiHealth />);
     await act(async () => Promise.resolve());
-    expect(screen.getByRole("alert")).toHaveTextContent("API no disponible");
+    expect(screen.getByRole("alert")).toHaveTextContent("API unavailable");
   });
 });
