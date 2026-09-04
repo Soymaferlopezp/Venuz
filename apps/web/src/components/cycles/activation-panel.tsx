@@ -4,9 +4,14 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, LoaderCircle, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+
+type CycleMode = "stocks" | "options" | "mixed";
 type PublicCycle = {
   cycle_id: string;
   state: string;
+  mode: CycleMode;
+  selected_asset_class: "stock" | "option" | null;
+  options_capability_status: string;
   data_freshness: string;
   blocked_reasons: string[];
 };
@@ -27,6 +32,7 @@ const labels: Record<string, string> = {
 
 export function ActivationPanel() {
   const [cycle, setCycle] = useState<PublicCycle | null>(null);
+  const [mode, setMode] = useState<CycleMode>("stocks");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +43,7 @@ export function ActivationPanel() {
       const response = await fetch("/api/venuz/cycles/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ mode }),
       });
       if (!response.ok) throw new Error("Venuz could not start a safe cycle.");
       setCycle((await response.json()) as PublicCycle);
@@ -80,6 +86,26 @@ export function ActivationPanel() {
       <h2 id="activation-title" className="mt-3 text-2xl font-semibold">
         {cycle ? labels[cycle.state] : "Ready when you are"}
       </h2>
+      <fieldset className="mt-5" disabled={loading}>
+        <legend className="sr-only">Trading mode</legend>
+        <div className="grid grid-cols-3 gap-2">
+          {(["stocks", "options", "mixed"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              aria-pressed={mode === item}
+              onClick={() => setMode(item)}
+              className={`rounded-full border px-3 py-2 text-xs font-semibold capitalize ${
+                mode === item
+                  ? "border-amber-300 bg-amber-300 text-slate-950"
+                  : "border-slate-700 text-slate-300"
+              }`}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <p className="mt-3 text-sm leading-6 text-slate-300">
         {cycle
           ? "You are viewing the shared, auditable cycle. Repeated clicks never create visitor-specific orders."

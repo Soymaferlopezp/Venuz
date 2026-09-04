@@ -7,7 +7,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from alpaca.trading.client import TradingClient
-from alpaca.trading.enums import OrderSide, TimeInForce
+from alpaca.trading.enums import OrderSide, PositionIntent, TimeInForce
 from alpaca.trading.requests import MarketOrderRequest, StopOrderRequest, TrailingStopOrderRequest
 
 from app.integrations.broker import (
@@ -57,6 +57,14 @@ class AlpacaPyBroker:
             ),
             stop_price=(Decimal(str(order.stop_price)) if order.stop_price else None),
             trail_percent=(Decimal(str(order.trail_percent)) if order.trail_percent else None),
+            asset_class=(
+                "option" if "option" in str(getattr(order, "asset_class", "")).lower() else "stock"
+            ),
+            position_intent=(
+                str(order.position_intent).lower().replace("positionintent.", "")
+                if getattr(order, "position_intent", None) is not None
+                else None
+            ),
             observed_at=datetime.now(UTC),
         )
 
@@ -69,6 +77,12 @@ class AlpacaPyBroker:
             "time_in_force": TimeInForce.DAY,
             "client_order_id": command.client_order_id,
         }
+        if command.asset_class == "option":
+            common["position_intent"] = (
+                PositionIntent.SELL_TO_OPEN
+                if command.position_intent == "sell_to_open"
+                else PositionIntent.BUY_TO_CLOSE
+            )
         if command.kind == BrokerOrderKind.MARKET:
             return MarketOrderRequest(**common)
         if command.kind == BrokerOrderKind.STOP and command.stop_price is not None:

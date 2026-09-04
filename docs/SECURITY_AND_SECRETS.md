@@ -66,3 +66,9 @@ Public activation does not use Supabase anonymous sign-in or visitor roles. Rate
 ## Ambiguous Paper responses
 
 Every Paper command is reserved durably before broker access and uses a stable, unique `client_order_id`. A timeout or ambiguous response never authorizes a new intent: the service looks up the same identifier, persists a pending reconciliation state when it cannot prove the outcome, and retries only reconciliation. Closing protection is replaced only after remote cancellation is confirmed. Entry execution always requires the complete deterministic preflight, including when auto-execution is enabled; the setting is disabled by default. Automated tests inject the test-only `apps/api/tests/fakes/FakeBroker` and never read Alpaca credentials or use a network order endpoint.
+
+## Options capability and public data
+
+The capability probe is read-only and allowlists the exact Paper host. It exposes only approval/trading levels, boolean buying-power availability, data-surface availability, feed name, timestamps, and safe reason codes—never balances, account IDs, raw responses, headers, or credentials. Level 1 is mandatory for Cash-Secured Puts. Failure blocks Options and Mixed while Stocks remains available.
+
+Option tables have RLS enabled and no anon/authenticated grants. Backend grants are explicit; observation/evaluation/lifecycle/settlement evidence is append-only. Public API models omit broker order IDs and client order IDs. Automatic execution remains false by default and uses the same preflight, atomic reservation, stable identifier, and Paper-only broker path when enabled.

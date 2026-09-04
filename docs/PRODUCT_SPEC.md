@@ -82,7 +82,7 @@ The audit page reconstructs a decision from provider inputs through criteria, ap
 ## Out of scope
 
 - Live trading.
-- Options execution in this first MVP.
+- Calls, naked puts, spreads, straddles, multileg options, and any options strategy other than one-contract Cash-Secured Puts.
 - Crypto.
 - TradingView.
 - Backtest claims presented as guaranteed performance.
@@ -108,3 +108,9 @@ The MVP is public without registration and exposes one primary action: **Activat
 ## Phase 3 lifecycle observation
 
 The public cycle experience can observe allowlisted order, approval, and audit timelines without receiving broker identifiers, account metadata, raw provider payloads, or any command endpoint. Partial fills, stop replacement, trailing activation, critical exits, nonblocking approvals, ambiguous-response recovery, and restart reconciliation are explicit visible states. All actual submissions remain internal, Paper-only, and subject to deterministic revalidation.
+
+## Phase 3B public modes
+
+The public activation control offers Stocks, Options, and Mixed. The mode is part of the deterministic global cycle key, so concurrent visitors join the same cycle for the same mode, strategy, market session, and data cutoff. Options and Mixed display a safe Level 1 capability block without affecting Stocks. Mixed compares only fully eligible candidates and submits at most the single deterministic winner.
+
+Options observation extends Exploring with underlyings, contracts, expirations, and feed; Analyzing with delta, DTE, OTM status, IV relative signal, liquidity, collateral, and gates; and Paper Trading with blocked/no-trade, submission, partial/full fill, monitoring, Buy to Close, assignment, expiration, and completion states.

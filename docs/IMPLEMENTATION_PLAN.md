@@ -114,4 +114,10 @@ For this delivery, the official Phase 3 scope supersedes the older phase labels 
 
 Implemented locally: broker protocol and Paper-only `alpaca-py` adapter; mandatory fake-broker tests; durable idempotent submission; partial/full fill processing; restart reconciliation; initial 10% stop; +2R and estimated-price branches; 5% trailing protection while retaining the full position; cancel-confirm-replace enforcement; critical automatic exits; independent noncritical-red approvals; sanitized observation endpoints; and complete durable audit records.
 
-The schema expansion remains in the unapplied `20260903043000_phase3_global_cycles.sql` migration because that migration has never reached the hosted project. It also removes an invalid duplicate `client_order_id` alteration inherited from the first slice. Do not create a follow-up migration unless the Phase 3 migration is applied first. The hosted preview, apply, deployment, and Paper smoke test are separate approval gates.
+The Phase 3 migration `20260903043000_phase3_global_cycles.sql` has been applied to the hosted project. It is immutable. Every later schema change must use a new migration; hosted preview, apply, deployment, and Paper smoke tests remain separate approval gates.
+
+## Phase 3B: Options Trading
+
+Implemented locally: mode-aware global cycles; read-only sanitized Level 1 capability; deterministic one-contract Cash-Secured Put eligibility, contract and Mixed ranking; IV relative signal; combined assignment exposure and collateral gates; alpaca-py option position intents; durable entry/close idempotency; partial/full fill, restart, assignment, expiration, and exit reconciliation; sanitized public observation; and network-free lifecycle tests.
+
+The additive `20260903150000_phase3b_options_trading.sql` migration is pending hosted preview and apply. Its 39 pgTAP checks run only in GitHub Actions against the ephemeral Supabase stack. No local or hosted Supabase command is part of this checkpoint.

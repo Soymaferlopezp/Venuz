@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
+from app.domain.options import CycleMode, OptionsCapability
 from app.repositories.analysis import SupabaseRestStore
 from app.services.cycles import CycleEvent, PublicCycle
 
@@ -30,6 +31,9 @@ class SupabaseCycleRepository:
         return PublicCycle(
             cycle_id=str(row["cycle_id"]),
             cycle_key=str(row["cycle_key"]),
+            mode=str(row.get("mode", "stocks")),
+            selected_asset_class=row.get("selected_asset_class"),
+            options_capability_status=str(row.get("options_capability_status", "not_required")),
             state=str(row["state"]),
             historical=historical,
             data_freshness=str(row.get("data_freshness", "fresh")),
@@ -41,9 +45,26 @@ class SupabaseCycleRepository:
             updated_at=row["updated_at"],
         )
 
-    async def activate(self, key: str, now: datetime) -> PublicCycle:
+    async def activate(
+        self,
+        key: str,
+        now: datetime,
+        mode: CycleMode = CycleMode.STOCKS,
+        capability: OptionsCapability | None = None,
+    ) -> PublicCycle:
         row = await self._rpc(
-            "activate_global_cycle", {"p_cycle_key": key, "p_now": now.isoformat()}
+            "activate_global_cycle_mode",
+            {
+                "p_cycle_key": key,
+                "p_mode": mode.value,
+                "p_now": now.isoformat(),
+                "p_options_capability_status": (
+                    capability.status if capability is not None else "not_required"
+                ),
+                "p_blocked_reasons": list(
+                    capability.blocking_reasons if capability is not None else ()
+                ),
+            },
         )
         if not isinstance(row, Mapping):
             raise RuntimeError("Invalid cycle activation response")

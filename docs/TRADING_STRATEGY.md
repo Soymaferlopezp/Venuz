@@ -4,7 +4,7 @@ Status: approved product rule set for the MVP. Changes require an explicit decis
 
 ## 1. Scope
 
-The MVP analyzes and paper-trades US equities only. Options are outside this first implementation slice. It does not use TradingView, crypto, live trading, banks, insurers, REITs, penny stocks, or companies without positive earnings.
+The MVP analyzes US equities in Stocks mode and may paper-trade one-leg Cash-Secured Puts in Options or Mixed mode. Calls, naked puts, spreads, straddles, multileg strategies, crypto, live trading, banks, insurers, REITs, penny stocks, and companies without positive earnings are excluded.
 
 ## 2. Universe and portfolio construction
 
@@ -225,3 +225,13 @@ Evidence priority:
 4. Other explicitly approved sources.
 
 Alpaca News may help explain anomalies, but correlation is not causation. An LLM can summarize evidence; it cannot create missing facts, change a traffic light, or submit an order on its own.
+
+## Phase 3B Cash-Secured Put rules
+
+Options entries are exactly one OTM put contract, Sell to Open, Market, Day, and Alpaca Paper only. Eligible contracts have 30–45 DTE and delta from -0.30 through -0.15. Quotes, spread, volume, open interest, underlying price, drift, feed, contract metadata, options buying power, cash, collateral, concentration, earnings window, duplicates, and market hours must all pass deterministic gates.
+
+Collateral is `strike × 100`; expected premium is never counted as cash before a real fill. The IV relative signal is `current implied volatility / realized volatility`, where realized volatility uses a documented 20-session window of daily underlying returns. This signal is not IV Rank and is unavailable when either input is invalid.
+
+Take profit buys to close at 50% of entry credit. Stop loss buys to close at or above three times entry credit, representing a loss of twice the initial credit. Remaining positions close at 21 DTE. Exit priority is critical deterioration or account risk, stop loss, 21 DTE, take profit, then noncritical rules. Assignment and expiration reconciliation are defensive lifecycle controls, not simulated events.
+
+Options mode accepts eligible high-quality equities plus the documented liquid ETF allowlist: DIA, IWM, QQQ, and SPY. ETFs skip inapplicable corporate fundamentals but retain every liquidity, collateral, concentration, volatility, and data-quality gate. Mixed applies the additional `underlying_price <= USD 40` options gate and deterministically selects at most one winner across the best eligible Stock and Option candidate.

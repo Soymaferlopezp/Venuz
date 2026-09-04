@@ -3,6 +3,7 @@ from typing import Annotated, cast
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.domain.options import CycleMode, OptionsCapability
 from app.services.cycles import CycleEvent, CycleRepository, CycleService, PublicCycle
 
 router = APIRouter(prefix="/v1/cycles", tags=["public cycles"])
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/v1/cycles", tags=["public cycles"])
 class ActivationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     request_token: Annotated[str | None, Field(max_length=128)] = None
+    mode: CycleMode = CycleMode.STOCKS
 
 
 def _repository(request: Request) -> CycleRepository:
@@ -19,10 +21,12 @@ def _repository(request: Request) -> CycleRepository:
 
 @router.post("/activate", response_model=PublicCycle)
 async def activate_cycle(body: ActivationRequest, request: Request) -> PublicCycle:
-    del body
+    capability: OptionsCapability | None = None
+    if body.mode in {CycleMode.OPTIONS, CycleMode.MIXED}:
+        capability = await request.app.state.options_service.capability()
     return await CycleService(
         _repository(request), request.app.state.settings.strategy_version
-    ).activate()
+    ).activate(mode=body.mode, capability=capability)
 
 
 @router.get("/latest", response_model=PublicCycle)

@@ -16,7 +16,7 @@ async function proxy(
     return Response.json({ detail: "Unsupported API path" }, { status: 404 });
   }
   const token = (await cookies()).get("venuz_access_token")?.value;
-  const isPublicCycle = path[0] === "cycles";
+  const isPublicCycle = path[0] === "cycles" || path[0] === "options";
   if (!token && !isPublicCycle) {
     return Response.json(
       { detail: "Authentication required" },

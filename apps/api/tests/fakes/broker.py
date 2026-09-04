@@ -40,6 +40,8 @@ class FakeBroker:
                 quantity=command.quantity,
                 stop_price=command.stop_price,
                 trail_percent=command.trail_percent,
+                asset_class=command.asset_class,
+                position_intent=command.position_intent,
                 observed_at=datetime.now(UTC),
             )
             self.commands.append(command)

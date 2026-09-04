@@ -6,6 +6,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.domain.options import CycleMode
+
 
 class CycleState(StrEnum):
     QUEUED = "queued"
@@ -55,9 +57,14 @@ def assert_transition(current: CycleState, target: CycleState) -> None:
         raise InvalidTransition(f"Invalid cycle transition: {current} -> {target}")
 
 
-def cycle_key(strategy_version: str, market_session: date, data_cutoff: datetime) -> str:
+def cycle_key(
+    strategy_version: str,
+    market_session: date,
+    data_cutoff: datetime,
+    mode: CycleMode = CycleMode.STOCKS,
+) -> str:
     cutoff = data_cutoff.astimezone(UTC).replace(microsecond=0).isoformat()
-    return f"{strategy_version}:{market_session.isoformat()}:{cutoff}"
+    return f"{strategy_version}:{mode.value}:{market_session.isoformat()}:{cutoff}"
 
 
 class GuardResult(BaseModel):

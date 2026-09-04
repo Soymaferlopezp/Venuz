@@ -1,6 +1,6 @@
 # Venuz
 
-> Evidence-first fundamental screening for US equities, designed exclusively for Alpaca Paper Trading.
+> Evidence-first Stocks and Cash-Secured Put screening, designed exclusively for Alpaca Paper Trading.
 
 Venuz turns SEC filings, Alpaca market data, and narrowly scoped analyst estimates into a deterministic company thesis. Every criterion, valuation observation, exclusion, and state transition is reproducible and auditable. An LLM is never allowed to decide eligibility, risk, valuation, or trading actions.
 
@@ -8,7 +8,7 @@ Venuz turns SEC filings, Alpaca market data, and narrowly scoped analyst estimat
 
 ## Phase 3 status
 
-The first two local Phase 3 slices are functional; the hosted Phase 3 migration remains pending review:
+The two Phase 3 stock-execution slices are functional and their hosted migration has been applied. Phase 3B adds Options locally and remains pending hosted preview:
 
 - public access without registration through one **Activate Venuz** button;
 - one global cycle per strategy version, applicable US market session, and relevant-data cutoff;
@@ -230,4 +230,14 @@ CI additionally runs pgTAP, Gitleaks, dependency checks, and production builds.
 
 ## Pending hosted checkpoint
 
-`supabase/migrations/20260903043000_phase3_global_cycles.sql` now contains both Phase 3 slices and is still unapplied. The next hosted action is a reviewed `supabase db push --dry-run`; applying the migration, deploying, or running an Alpaca Paper smoke test requires separate explicit authorization.
+The applied `supabase/migrations/20260903043000_phase3_global_cycles.sql` remains unchanged. The additive `supabase/migrations/20260903150000_phase3b_options_trading.sql` is pending a separately authorized hosted dry-run and apply. Deployment and Alpaca Paper smoke tests also require separate authorization.
+
+## Phase 3B Options Trading
+
+Public activation accepts `stocks`, `options`, or `mixed`. The selected mode participates in the global deterministic cycle key. Options uses one-contract, OTM Cash-Secured Puts only: Sell to Open, Market, Day, Alpaca Paper. Mixed compares the best eligible Stock and Option candidate using versioned deterministic scoring and opens at most one opportunity; Options candidates in Mixed also require an underlying price at or below USD 40.
+
+The read-only `/v1/options/capability` endpoint verifies Options Level 1, Paper host, options buying-power availability, optionable assets, contracts, chains, snapshots, and OPRA or indicative feed access without exposing balances or account metadata. `/v1/cycles/{cycle_id}/options` returns the allowlisted contract evaluation and lifecycle view. If capability is missing, Options and Mixed block safely while Stocks remains usable.
+
+The MVP uses an explicit IV relative signal—current implied volatility divided by deterministic 20-session realized volatility—not IV Rank. Missing or invalid inputs produce no trade. Collateral is strike × 100, assignment exposure is the position size, and existing Stock/Options exposure is evaluated together.
+
+Production imports the official `alpaca-py` package for Trading and Options Data. `FakeBroker` and `FakeOptionsGateway` exist only under tests, use no credentials, and perform no network calls. Runtime API, Trading MCP, CLI smoke tests, market/options data, and Paper execution are separate integration surfaces; see `docs/ALPACA_OPTIONS_VERIFICATION.md`.

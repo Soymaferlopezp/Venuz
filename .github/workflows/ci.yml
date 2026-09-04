@@ -73,6 +73,8 @@ jobs:
         run: supabase test db supabase/tests/operational_rls.test.sql
       - name: Test Phase 3 cycle RLS and idempotency
         run: supabase test db supabase/tests/phase3_cycles_rls.test.sql
+      - name: Test Phase 3B Options RLS and idempotency
+        run: supabase test db supabase/tests/phase3b_options_rls.test.sql
       - name: Test ownership RLS
         run: supabase test db supabase/tests/ownership_rls.test.sql
       - name: Stop ephemeral Supabase stack

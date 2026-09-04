@@ -7,6 +7,7 @@ from uuid import NAMESPACE_URL, uuid5
 
 from pydantic import BaseModel, ConfigDict
 
+from app.domain.options import AssetClass, CycleMode, OptionsCapability
 from app.domain.paper_execution import CycleState, assert_transition, cycle_key
 
 
@@ -21,6 +22,9 @@ class PublicCycle(BaseModel):
     model_config = ConfigDict(frozen=True)
     cycle_id: str
     cycle_key: str
+    mode: CycleMode = CycleMode.STOCKS
+    selected_asset_class: AssetClass | None = None
+    options_capability_status: str = "not_required"
     state: CycleState
     historical: bool = False
     data_freshness: str = "fresh"
@@ -33,7 +37,13 @@ class PublicCycle(BaseModel):
 
 
 class CycleRepository(Protocol):
-    async def activate(self, key: str, now: datetime) -> PublicCycle: ...
+    async def activate(
+        self,
+        key: str,
+        now: datetime,
+        mode: CycleMode = CycleMode.STOCKS,
+        capability: OptionsCapability | None = None,
+    ) -> PublicCycle: ...
     async def get(self, cycle_id: str) -> PublicCycle | None: ...
     async def latest(self) -> PublicCycle | None: ...
 
@@ -44,16 +54,36 @@ class MemoryCycleRepository:
         self._by_key: dict[str, PublicCycle] = {}
         self._by_id: dict[str, PublicCycle] = {}
 
-    async def activate(self, key: str, now: datetime) -> PublicCycle:
+    async def activate(
+        self,
+        key: str,
+        now: datetime,
+        mode: CycleMode = CycleMode.STOCKS,
+        capability: OptionsCapability | None = None,
+    ) -> PublicCycle:
         async with self._lock:
             if key in self._by_key:
                 return self._by_key[key]
             cycle_id = str(uuid5(NAMESPACE_URL, f"venuz-cycle:{key}"))
-            event = CycleEvent(state=CycleState.QUEUED, occurred_at=now, message="Cycle queued")
+            initial_state = (
+                CycleState.BLOCKED
+                if capability is not None and not capability.eligible
+                else CycleState.QUEUED
+            )
+            event = CycleEvent(
+                state=initial_state,
+                occurred_at=now,
+                message="Options capability blocked"
+                if initial_state == CycleState.BLOCKED
+                else "Cycle queued",
+            )
             cycle = PublicCycle(
                 cycle_id=cycle_id,
                 cycle_key=key,
-                state=CycleState.QUEUED,
+                mode=mode,
+                options_capability_status=capability.status if capability else "not_required",
+                state=initial_state,
+                blocked_reasons=capability.blocking_reasons if capability else (),
                 events=(event,),
                 updated_at=now,
             )
@@ -109,10 +139,15 @@ class CycleService:
         *,
         market_session: date | None = None,
         data_cutoff: datetime | None = None,
+        mode: CycleMode = CycleMode.STOCKS,
+        capability: OptionsCapability | None = None,
     ) -> PublicCycle:
         instant = (now or datetime.now(UTC)).astimezone(UTC)
         session = market_session or instant.date()
         cutoff = data_cutoff or instant.replace(hour=0, minute=0, second=0, microsecond=0)
         return await self.repository.activate(
-            cycle_key(self.strategy_version, session, cutoff), instant
+            cycle_key(self.strategy_version, session, cutoff, mode),
+            instant,
+            mode,
+            capability,
         )

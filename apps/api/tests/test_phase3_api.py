@@ -10,6 +10,9 @@ def test_public_cycle_routes_are_sanitized_and_idempotent(client: TestClient) ->
     assert set(first) == {
         "cycle_id",
         "cycle_key",
+        "mode",
+        "selected_asset_class",
+        "options_capability_status",
         "state",
         "historical",
         "data_freshness",

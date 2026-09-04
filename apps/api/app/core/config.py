@@ -64,6 +64,15 @@ class Settings(BaseSettings):
     min_cash_pct: Decimal = Field(default=Decimal("0.20"), ge=Decimal("0.20"), le=1)
     max_sector_pct: Decimal = Field(default=Decimal("0.20"), ge=0, le=Decimal("0.20"))
     max_companies_per_sector: int = Field(default=2, ge=1, le=2)
+    option_quote_max_age_seconds: int = Field(default=60, ge=1, le=300)
+    option_max_spread_absolute: Decimal = Field(default=Decimal("0.50"), gt=0)
+    option_max_spread_pct: Decimal = Field(default=Decimal("0.15"), gt=0, le=1)
+    option_min_volume: int = Field(default=50, ge=0)
+    option_min_open_interest: int = Field(default=100, ge=0)
+    option_min_premium: Decimal = Field(default=Decimal("0.25"), gt=0)
+    option_min_iv_relative_ratio: Decimal = Field(default=Decimal("1.10"), gt=0)
+    option_realized_volatility_window: int = Field(default=20, ge=10, le=252)
+    option_min_underlying_dollar_volume: Decimal = Field(default=Decimal("50000000"), gt=0)
 
     @model_validator(mode="after")
     def enforce_paper_only(self) -> Self:
